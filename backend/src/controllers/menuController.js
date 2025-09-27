@@ -1,10 +1,13 @@
-const { Menu } = require('../models/Menu');
+const Menu = require('../models/Menu');
+const { Op } = require('sequelize');
 
 exports.getMenus = async (req, res) => {
   try {
     const { search } = req.query;
     let where = {};
-    if (search) where.name = { [Op.like]: `%${search}%` };
+    if (search && search.trim() !== '') {
+      where.name = { [Op.like]: `%${search}%` };
+    }
     const menus = await Menu.findAll({ where });
     res.json(menus);
   } catch (err) {

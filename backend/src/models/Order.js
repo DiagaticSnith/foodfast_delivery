@@ -1,6 +1,5 @@
 const { sequelize } = require('../config/db');
 const { DataTypes } = require('sequelize');
-const User = require('./User');
 
 const Order = sequelize.define('Order', {
   userId: { type: DataTypes.INTEGER, allowNull: false },
@@ -9,5 +8,9 @@ const Order = sequelize.define('Order', {
   address: { type: DataTypes.STRING, allowNull: false },
 });
 
-Order.belongsTo(User, { foreignKey: 'userId' });
+Order.associate = (models) => {
+  Order.belongsTo(models.User, { foreignKey: 'userId' });
+  Order.hasMany(models.OrderDetail, { foreignKey: 'orderId' });
+};
+
 module.exports = Order;

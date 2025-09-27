@@ -8,7 +8,7 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialect: 'mysql',
+    dialect: 'mysql', // Phải có dòng này để chỉ định dialect
   }
 );
 
@@ -16,7 +16,6 @@ const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log('MySQL Connected');
-    await sequelize.sync(); // Sync models with DB
   } catch (err) {
     console.error('Connection error:', err);
     process.exit(1);

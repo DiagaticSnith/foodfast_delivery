@@ -8,4 +8,9 @@ const User = sequelize.define('User', {
   role: { type: DataTypes.ENUM('admin', 'user'), defaultValue: 'user' },
 });
 
+User.associate = (models) => {
+  User.hasOne(models.Cart, { foreignKey: 'userId' });
+  User.hasMany(models.Order, { foreignKey: 'userId' });
+};
+
 module.exports = User;
