@@ -6,9 +6,15 @@ const Home = () => {
 	const [menus, setMenus] = useState([]);
 	const [search, setSearch] = useState('');
 
+
 	useEffect(() => {
 		const fetchMenus = async () => {
-			const res = await menuAPI.getMenus({ search });
+			let res;
+			if (search && search.trim() !== '') {
+				res = await menuAPI.getMenus({ search });
+			} else {
+				res = await menuAPI.getMenus();
+			}
 			setMenus(res.data);
 		};
 		fetchMenus();

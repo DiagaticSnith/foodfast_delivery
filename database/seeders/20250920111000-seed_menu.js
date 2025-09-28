@@ -10,6 +10,7 @@ module.exports = {
         description: 'Pizza truyền thống Ý với phô mai và sốt cà chua',
         category: 'Pizza',
         imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836',
+        restaurantId: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -19,6 +20,7 @@ module.exports = {
         description: 'Burger bò phô mai đặc biệt',
         category: 'Burger',
         imageUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349',
+        restaurantId: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -28,6 +30,7 @@ module.exports = {
         description: 'Cơm gà Hải Nam chuẩn vị',
         category: 'Cơm',
         imageUrl: 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc',
+        restaurantId: 2,
         createdAt: new Date(),
         updatedAt: new Date()
       }

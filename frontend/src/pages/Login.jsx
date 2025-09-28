@@ -10,10 +10,16 @@ const Login = ({ setUser }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await userAPI.login({ username, password });
-      setAuthToken(res.data.token);
-      setUser({ username });
+    const res = await userAPI.login({ username, password });
+    setAuthToken(res.data.token);
+    setUser({ username, id: res.data.user?.id, role: res.data.user?.role });
+    localStorage.setItem('user', JSON.stringify({ username, id: res.data.user?.id, role: res.data.user?.role }));
+    localStorage.setItem('token', res.data.token);
+    if (res.data.user?.role === 'admin') {
+      navigate('/admin-dashboard');
+    } else {
       navigate('/');
+    }
     } catch (err) {
       alert(err.response?.data?.message || 'Đăng nhập thất bại!');
     }

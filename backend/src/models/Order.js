@@ -6,6 +6,15 @@ const Order = sequelize.define('Order', {
   total: { type: DataTypes.FLOAT, allowNull: false },
   status: { type: DataTypes.STRING, defaultValue: 'Pending' },
   address: { type: DataTypes.STRING, allowNull: false },
+  sessionId: { type: DataTypes.STRING, allowNull: true }, // Lưu session_id Stripe
+  droneId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Drones',
+      key: 'id',
+    },
+  },
 });
 
 Order.associate = (models) => {

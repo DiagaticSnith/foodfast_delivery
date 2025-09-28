@@ -5,6 +5,8 @@ const Order = require('./Order');
 const OrderDetail = require('./OrderDetail');
 const Menu = require('./Menu');
 const CartItem = require('./CartItem');
+const Restaurant = require('./Restaurant');
+const Drone = require('./Drone');
 
 const db = {
   User,
@@ -13,9 +15,10 @@ const db = {
   OrderDetail,
   Menu,
   CartItem,
+  Restaurant,
+  Drone,
 };
 
-// Gọi associate cho từng model nếu có
 Object.values(db).forEach((model) => {
   if (typeof model.associate === 'function') {
     model.associate(db);
