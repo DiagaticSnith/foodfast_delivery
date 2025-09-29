@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '../api/api';
 
 
 const MenuAdmin = () => {
@@ -13,11 +13,11 @@ const MenuAdmin = () => {
   const pageSize = 5;
 
   const fetchMenus = async () => {
-    const res = await axios.get('/api/menus');
+    const res = await api.get('/api/menus');
     setMenus(res.data);
   };
   const fetchRestaurants = async () => {
-    const res = await axios.get('/api/restaurants');
+    const res = await api.get('/api/restaurants');
     setRestaurants(res.data);
   };
 
@@ -37,7 +37,7 @@ const MenuAdmin = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Xóa món này?')) return;
-    await axios.delete(`/api/menus/${id}`);
+    await api.delete(`/api/menus/${id}`);
     fetchMenus();
   };
 
@@ -45,9 +45,9 @@ const MenuAdmin = () => {
     e.preventDefault();
     setLoading(true);
     if (editing) {
-      await axios.put(`/api/menus/${editing}`, form);
+      await api.put(`/api/menus/${editing}`, form);
     } else {
-      await axios.post('/api/menus', form);
+      await api.post('/api/menus', form);
     }
     setEditing(null);
     setForm({ name: '', price: '', description: '', category: '', imageUrl: '', restaurantId: '' });
@@ -86,26 +86,26 @@ const MenuAdmin = () => {
         <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
           <thead>
             <tr style={{background:'#fafafa',fontWeight:600}}>
-              <th style={{padding:'12px 8px'}}>ID</th>
-              <th style={{padding:'12px 8px'}}>Tên</th>
-              <th style={{padding:'12px 8px'}}>Giá</th>
-              <th style={{padding:'12px 8px'}}>Phân loại</th>
-              <th style={{padding:'12px 8px'}}>Nhà hàng</th>
-              <th style={{padding:'12px 8px'}}>Ảnh</th>
-              <th style={{padding:'12px 8px'}}>Mô tả</th>
-              <th style={{padding:'12px 8px'}}></th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>ID</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Tên</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Giá</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Phân loại</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Nhà hàng</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Ảnh</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Mô tả</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}></th>
             </tr>
           </thead>
           <tbody>
             {paged.map(m => (
               <tr key={m.id} style={{borderBottom:'1px solid #f0f0f0',transition:'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#f6faff'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{m.id}</td>
-                <td style={{padding:'10px 8px'}}>{m.name}</td>
-                <td style={{padding:'10px 8px'}}>{Number(m.price).toLocaleString()}₫</td>
-                <td style={{padding:'10px 8px'}}>{m.category}</td>
-                <td style={{padding:'10px 8px'}}>{restaurants.find(r=>r.id===m.restaurantId)?.name || m.restaurantId}</td>
-                <td style={{padding:'10px 8px'}}>{m.imageUrl && <img src={m.imageUrl} alt={m.name} style={{width:48,height:48,objectFit:'cover',borderRadius:8}} />}</td>
-                <td style={{padding:'10px 8px',maxWidth:180,whiteSpace:'pre-line',overflow:'hidden',textOverflow:'ellipsis'}}>{m.description}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.name}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{Number(m.price).toLocaleString()}₫</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.category}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{restaurants.find(r=>r.id===m.restaurantId)?.name || m.restaurantId}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.imageUrl && <img src={m.imageUrl} alt={m.name} style={{width:48,height:48,objectFit:'cover',borderRadius:8}} />}</td>
+                <td style={{padding:'10px 8px',maxWidth:180,whiteSpace:'pre-line',overflow:'hidden',textOverflow:'ellipsis',textAlign:'center'}}>{m.description}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>
                   <button onClick={()=>handleEdit(m)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:'pointer'}}>Sửa</button>
                   <button onClick={()=>handleDelete(m.id)} style={{background:'#fff',color:'#ff4d4f',border:'1px solid #ff4d4f',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xóa</button>

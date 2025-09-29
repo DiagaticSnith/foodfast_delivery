@@ -15,10 +15,6 @@ const Drone = sequelize.define('Drone', {
     type: DataTypes.STRING,
     defaultValue: 'available', // available, busy, maintenance
   },
-  location: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
   userId: {
     type: DataTypes.INTEGER,
     allowNull: true, // shipper assigned

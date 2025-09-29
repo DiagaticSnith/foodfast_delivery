@@ -12,6 +12,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Restaurants from './pages/Restaurants';
 import AdminDashboard from './pages/AdminDashboard';
+import ShipperDashboard from './pages/ShipperDashboard';
+import UserInfo from './pages/UserInfo';
 import RestaurantDetail from './pages/RestaurantDetail';
 import MenuDetail from './pages/MenuDetail';
 import CheckoutSuccess from './pages/CheckoutSuccess';
@@ -44,6 +46,8 @@ function App() {
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/shipper-dashboard" element={<ShipperDashboard />} />
+          <Route path="/user-info" element={<UserInfo user={user} setUser={setUser} />} />
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
           <Route path="/menu/:id" element={<MenuDetail />} />
         </Routes>

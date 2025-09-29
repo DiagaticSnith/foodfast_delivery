@@ -4,7 +4,8 @@ import MapModal from '../components/MapModal';
 import { paymentAPI, orderAPI } from '../api/api';
 
 const Checkout = () => {
-  const [address, setAddress] = useState('');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [address, setAddress] = useState(user.address || '');
   const [openMap, setOpenMap] = useState(false);
   const [loading, setLoading] = useState(false);
   // Lấy cartItems từ React Router state
@@ -63,39 +64,6 @@ const Checkout = () => {
           }}
         >
           Thanh toán với Stripe
-        </button>
-        <button
-          style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'16px 40px',fontSize:20,cursor:'pointer',width:'100%'}}
-          disabled={!address || loading}
-          onClick={async () => {
-            setLoading(true);
-            try {
-              // Tính tổng tiền
-              const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-              // Sinh sessionId cho bill tiền mặt
-              const sessionId = `cash_${Date.now()}_${userId}`;
-              // Tạo order và orderdetails qua API
-              const res = await orderAPI.createOrder({
-                userId,
-                total,
-                address,
-                status: 'Unpaid',
-                sessionId,
-                items: cartItems.map(item => ({
-                  menuId: item.menuId || item.id,
-                  quantity: item.quantity,
-                  price: item.price
-                }))
-              });
-              // Sau khi tạo xong chuyển hướng sang trang bill
-              window.location.href = `/checkout/success?session_id=${sessionId}`;
-            } catch (err) {
-              alert('Lỗi tạo hóa đơn tiền mặt: ' + (err.response?.data?.message || err.message));
-            }
-            setLoading(false);
-          }}
-        >
-          Thanh toán tiền mặt
         </button>
       </div>
     </div>

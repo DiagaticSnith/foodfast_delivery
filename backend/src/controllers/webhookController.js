@@ -40,7 +40,7 @@ exports.handleWebhook = async (req, res) => {
                 userId,
                 total: session.amount_total, // Đơn vị VND
                 address,
-                status: 'Paid',
+                status: 'Pending',
                 sessionId: session.id,
             });
             // Tạo OrderDetails

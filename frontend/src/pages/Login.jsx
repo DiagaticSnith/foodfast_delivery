@@ -12,8 +12,8 @@ const Login = ({ setUser }) => {
     try {
     const res = await userAPI.login({ username, password });
     setAuthToken(res.data.token);
-    setUser({ username, id: res.data.user?.id, role: res.data.user?.role });
-    localStorage.setItem('user', JSON.stringify({ username, id: res.data.user?.id, role: res.data.user?.role }));
+    setUser(res.data.user);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
     localStorage.setItem('token', res.data.token);
     if (res.data.user?.role === 'admin') {
       navigate('/admin-dashboard');

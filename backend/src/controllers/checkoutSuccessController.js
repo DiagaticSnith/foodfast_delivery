@@ -15,7 +15,7 @@ exports.handleCheckoutSuccess = async (req, res) => {
       userId: session.metadata.userId,
       total: session.amount_total / 100,
       address: session.metadata.address,
-      status: 'Paid',
+  status: 'Pending',
     });
     // Tạo OrderDetails
     for (const item of lineItems.data) {

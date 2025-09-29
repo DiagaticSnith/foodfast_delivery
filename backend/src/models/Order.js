@@ -19,6 +19,7 @@ const Order = sequelize.define('Order', {
 
 Order.associate = (models) => {
   Order.belongsTo(models.User, { foreignKey: 'userId' });
+  Order.belongsTo(models.Drone, { foreignKey: 'droneId' });
   Order.hasMany(models.OrderDetail, { foreignKey: 'orderId' });
 };
 

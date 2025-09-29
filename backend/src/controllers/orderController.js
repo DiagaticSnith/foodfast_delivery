@@ -1,3 +1,31 @@
+// Admin gán drone cho đơn hàng
+exports.assignDrone = async (req, res) => {
+  try {
+    const { id } = req.params; // order id
+    const { droneId } = req.body;
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    order.droneId = droneId;
+    await order.save();
+    res.json({ message: 'Drone assigned', order });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+}
+// Admin gán shipper cho đơn hàng
+exports.assignShipper = async (req, res) => {
+  try {
+    const { id } = req.params; // order id
+    const { shipperId } = req.body;
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    order.shipperId = shipperId;
+    await order.save();
+    res.json({ message: 'Shipper assigned', order });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // Lấy order theo session_id Stripe
@@ -27,19 +55,28 @@ const { Order } = require('../models');
 // Lấy tất cả đơn hàng (admin)
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.findAll();
+    const { Drone, User, OrderDetail, Menu } = require('../models');
+    const orders = await Order.findAll({
+      include: [
+        { model: Drone, attributes: ['id', 'name', 'userId'] },
+        { model: User, attributes: ['id', 'username', 'email', 'role'] },
+        { model: OrderDetail, attributes: ['id', 'menuId', 'quantity', 'price'], include: [
+          { model: Menu, attributes: ['id', 'name'] }
+        ] }
+      ]
+    });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 }
 
+
 exports.createOrder = async (req, res) => {
   try {
-    const { userId, total, address, items, status, sessionId } = req.body;
-    // Tạo order với status và sessionId nếu có
-    const order = await Order.create({ userId, total, address, status: status || 'Unpaid', sessionId });
-    // Tạo orderdetails nếu có items
+    const { userId, total, address, items, sessionId } = req.body;
+    // Luôn tạo đơn với status 'Chưa giao'
+  const order = await Order.create({ userId, total, address, status: 'Pending', sessionId });
     if (Array.isArray(items) && items.length > 0) {
       const { OrderDetail } = require('../models');
       for (const item of items) {
@@ -52,6 +89,24 @@ exports.createOrder = async (req, res) => {
       }
     }
     res.status(201).json(order);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// API cập nhật trạng thái đơn hàng (chỉ cho phép 'Chưa giao' hoặc 'Đã giao')
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['Pending', 'Done'].includes(status)) {
+      return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
+    }
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    order.status = status;
+    await order.save();
+    res.json({ message: 'Cập nhật trạng thái thành công', order });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

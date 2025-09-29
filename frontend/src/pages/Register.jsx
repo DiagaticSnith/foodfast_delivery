@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// ...existing code...
 import { userAPI } from '../api/api';
 
 const Register = ({ setUser, backToLogin }) => {
@@ -15,8 +16,8 @@ const Register = ({ setUser, backToLogin }) => {
     }
     try {
       const res = await userAPI.register({ username, password, email });
-      setUser && setUser({ username: res.data.username });
-      alert('Đăng ký thành công!');
+  alert('Đăng ký thành công!');
+  window.location.href = '/login';
     } catch (err) {
       alert(err.response?.data?.message || 'Đăng ký thất bại!');
     }

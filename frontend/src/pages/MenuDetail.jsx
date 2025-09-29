@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { menuAPI } from '../api/api';
+import { menuAPI, cartAPI } from '../api/api';
+// ...existing code...
 
 const MenuDetail = () => {
   const { id } = useParams();
@@ -8,6 +9,7 @@ const MenuDetail = () => {
   const [related, setRelated] = useState([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+// ...existing code...
 
   useEffect(() => {
     menuAPI.getMenus()
@@ -33,7 +35,14 @@ const MenuDetail = () => {
       <img src={menu.imageUrl} alt={menu.name} style={{width:260,borderRadius:8,marginBottom:16}} />
       <p style={{fontSize:18}}>{menu.description}</p>
       <div style={{fontWeight:'bold',color:'#ff4d4f',fontSize:20,marginBottom:24}}>Giá: {menu.price.toLocaleString()}₫</div>
-      <h4 style={{marginTop:32,marginBottom:16}}>Món liên quan</h4>
+      <button
+        style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:8,padding:'12px 32px',fontWeight:600,fontSize:18,cursor:'pointer',marginBottom:24}}
+        onClick={async () => {
+          await cartAPI.addToCart(menu.id, 1);
+          alert('Đã thêm vào giỏ hàng!');
+        }}
+      >Đặt món</button>
+      <h4 style={{marginTop:32,marginBottom:16}}>Cùng nhà hàng</h4>
       <div style={{display:'flex',gap:24,justifyContent:'space-between',flexWrap:'wrap'}}>
         {related.map(item => (
           <div key={item.id} style={{border:'1px solid #eee',borderRadius:12,padding:16,minWidth:180,cursor:'pointer',background:'#fafafa',transition:'box-shadow 0.2s'}} onClick={()=>navigate(`/menu/${item.id}`)}>

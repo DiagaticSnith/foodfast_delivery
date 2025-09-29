@@ -68,20 +68,20 @@ const RestaurantAdmin = () => {
         <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
           <thead>
             <tr style={{background:'#fafafa',fontWeight:600}}>
-              <th style={{padding:'12px 8px'}}>ID</th>
-              <th style={{padding:'12px 8px'}}>Tên</th>
-              <th style={{padding:'12px 8px'}}>Địa chỉ</th>
-              <th style={{padding:'12px 8px'}}>Mô tả</th>
-              <th style={{padding:'12px 8px'}}></th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>ID</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Tên</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Địa chỉ</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Mô tả</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}></th>
             </tr>
           </thead>
           <tbody>
             {paged.map(r => (
               <tr key={r.id} style={{borderBottom:'1px solid #f0f0f0',transition:'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#f6faff'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{r.id}</td>
-                <td style={{padding:'10px 8px'}}>{r.name}</td>
-                <td style={{padding:'10px 8px'}}>{r.address}</td>
-                <td style={{padding:'10px 8px'}}>{r.description}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{r.name}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{r.address}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{r.description}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>
                   <button onClick={()=>handleEdit(r)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:'pointer'}}>Sửa</button>
                   <button onClick={()=>handleDelete(r.id)} style={{background:'#fff',color:'#ff4d4f',border:'1px solid #ff4d4f',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xóa</button>
