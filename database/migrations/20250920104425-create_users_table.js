@@ -10,6 +10,10 @@ module.exports = {
         primaryKey: true,
         allowNull: false
       },
+      name: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
       username: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -25,7 +29,7 @@ module.exports = {
         unique: true
       },
       role: {
-        type: Sequelize.ENUM('admin', 'user'),
+        type: Sequelize.ENUM('admin', 'user', 'restaurant', 'restaurantpending'),
         defaultValue: 'user'
       },
       createdAt: {

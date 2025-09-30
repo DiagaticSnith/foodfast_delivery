@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-// ...existing code...
 import { userAPI } from '../api/api';
 
 const Register = ({ setUser, backToLogin }) => {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
@@ -15,9 +14,9 @@ const Register = ({ setUser, backToLogin }) => {
       return;
     }
     try {
-      const res = await userAPI.register({ username, password, email });
-  alert('Đăng ký thành công!');
-  window.location.href = '/login';
+      const res = await userAPI.register({ username, password, name });
+      alert('Đăng ký thành công!');
+      window.location.href = '/login';
     } catch (err) {
       alert(err.response?.data?.message || 'Đăng ký thất bại!');
     }
@@ -35,10 +34,10 @@ const Register = ({ setUser, backToLogin }) => {
           required
         />
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
+          type="text"
+          placeholder="Tên hiển thị"
+          value={name}
+          onChange={e => setName(e.target.value)}
           required
         />
         <input

@@ -34,11 +34,20 @@ const Restaurant = sequelize.define('Restaurant', {
   noFlyZones: {
     type: DataTypes.JSON,
     allowNull: true,
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id',
+    },
   }
 });
 
 Restaurant.associate = (models) => {
   Restaurant.hasMany(models.Menu, { foreignKey: 'restaurantId' });
+  Restaurant.belongsTo(models.User, { foreignKey: 'userId' });
 };
 
 module.exports = Restaurant;

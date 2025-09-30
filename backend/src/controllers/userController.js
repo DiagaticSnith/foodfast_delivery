@@ -13,14 +13,16 @@ exports.getShippersAndPending = async (req, res) => {
 // Cập nhật thông tin cá nhân (address, phoneNumber)
 exports.updateUserInfo = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { address, phoneNumber } = req.body;
-    const user = await User.findByPk(id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    user.address = address;
-    user.phoneNumber = phoneNumber;
-    await user.save();
-    res.json({ message: 'User info updated', user: { id: user.id, username: user.username, email: user.email, address: user.address, phoneNumber: user.phoneNumber, role: user.role } });
+  const { id } = req.params;
+  const { name, email, address, phoneNumber } = req.body;
+  const user = await User.findByPk(id);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (name !== undefined) user.name = name;
+  if (email !== undefined) user.email = email;
+  if (address !== undefined) user.address = address;
+  if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+  await user.save();
+  res.json({ message: 'User info updated', user: { id: user.id, username: user.username, name: user.name, email: user.email, address: user.address, phoneNumber: user.phoneNumber, role: user.role } });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -32,11 +34,10 @@ exports.updateUserRole = async (req, res) => {
     const { role } = req.body;
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    // Nếu user đăng ký shipper, chỉ cho phép chuyển sang 'shipperpending'
-    if (role === 'shipperpending') {
-      user.role = 'shipperpending';
-    } else if (role === 'shipper' || role === 'user' || role === 'admin') {
-      // Admin duyệt hoặc từ chối
+    // Chỉ cho phép chuyển sang restaurantpending hoặc restaurant, user, admin
+    if (role === 'restaurantpending') {
+      user.role = 'restaurantpending';
+    } else if (role === 'restaurant' || role === 'user' || role === 'admin') {
       user.role = role;
     } else {
       return res.status(400).json({ message: 'Invalid role' });
@@ -50,7 +51,7 @@ exports.updateUserRole = async (req, res) => {
 // Lấy tất cả user (admin)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({ attributes: ['id', 'username', 'email', 'role'] });
+  const users = await User.findAll({ attributes: ['id', 'username', 'email', 'role', 'name'] });
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

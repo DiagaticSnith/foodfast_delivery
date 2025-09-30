@@ -49,7 +49,7 @@ const CheckoutSuccess = () => {
     <div style={{ maxWidth: 600, margin: '40px auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee', padding: 32 }}>
       <h2 style={{ color: '#ff4d4f', marginBottom: 24 }}>Hóa đơn thanh toán</h2>
       <div style={{ marginBottom: 16 }}><b>Mã đơn hàng:</b> #{order.id}</div>
-      <div style={{ marginBottom: 16 }}><b>Khách hàng:</b> {order.username || order.userId}</div>
+  <div style={{ marginBottom: 16 }}><b>Khách hàng:</b> {order.name || order.userId}</div>
       <div style={{ marginBottom: 16 }}><b>Địa chỉ:</b> {order.address}</div>
       <div style={{ marginBottom: 16 }}>
         <b>Trạng thái:</b> 

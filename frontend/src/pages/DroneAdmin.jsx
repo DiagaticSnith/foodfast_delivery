@@ -4,8 +4,7 @@ import axios from 'axios';
 const DroneAdmin = () => {
   const [drones, setDrones] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', status: 'available', userId: '' });
-  const [shippers, setShippers] = useState([]);
+  const [form, setForm] = useState({ name: '', status: 'available', launchpad: '' });
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -18,20 +17,14 @@ const DroneAdmin = () => {
 
   useEffect(() => {
     fetchDrones();
-    fetchShippers();
   }, []);
-
-  const fetchShippers = async () => {
-    const res = await axios.get('/api/users/shippers');
-    setShippers(res.data.filter(u => u.role === 'shipper'));
-  };
 
   const handleEdit = (d) => {
     setEditing(d.id);
     setForm({
       name: d.name,
       status: d.status,
-      userId: d.userId || ''
+      launchpad: d.launchpad || ''
     });
   };
 
@@ -50,7 +43,7 @@ const DroneAdmin = () => {
       await axios.post('/api/drones', form);
     }
     setEditing(null);
-    setForm({ name: '', status: 'available', userId: '' });
+    setForm({ name: '', status: 'available', launchpad: '' });
     setLoading(false);
     fetchDrones();
   };
@@ -75,14 +68,9 @@ const DroneAdmin = () => {
           <option value="busy">busy</option>
           <option value="maintenance">maintenance</option>
         </select>
-        <select value={form.userId} onChange={e=>setForm(f=>({...f,userId:e.target.value}))} style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} required>
-          <option value="">Chọn shipper</option>
-          {shippers.map(s => (
-            <option key={s.id} value={s.id}>{s.username} ({s.email})</option>
-          ))}
-        </select>
+        <input value={form.launchpad} onChange={e=>setForm(f=>({...f,launchpad:e.target.value}))} placeholder="Launchpad" style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
         <button type="submit" disabled={loading} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'10px 24px',fontWeight:600,fontSize:16,cursor:loading?'not-allowed':'pointer'}}>{editing ? 'Cập nhật' : 'Thêm mới'}</button>
-        {editing && <button type="button" style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'10px 18px',fontWeight:500,marginLeft:4,cursor:'pointer'}} onClick={()=>{setEditing(null);setForm({name:'',status:'available',userId:''});}}>Hủy</button>}
+        {editing && <button type="button" style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'10px 18px',fontWeight:500,marginLeft:4,cursor:'pointer'}} onClick={()=>{setEditing(null);setForm({name:'',status:'available',launchpad:''});}}>Hủy</button>}
       </form>
       <div style={{overflowX:'auto',borderRadius:12,boxShadow:'0 2px 8px #eee'}}>
         <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
@@ -92,7 +80,7 @@ const DroneAdmin = () => {
               <th style={{padding:'12px 8px',textAlign:'center'}}>Tên</th>
               <th style={{padding:'12px 8px',textAlign:'center'}}>Trạng thái</th>
               {/* <th style={{padding:'12px 8px',textAlign:'center'}}>Vị trí</th> */}
-              <th style={{padding:'12px 8px',textAlign:'center'}}>UserId (Shipper)</th>
+              <th style={{padding:'12px 8px',textAlign:'center'}}>Launchpad</th>
               <th style={{padding:'12px 8px',textAlign:'center'}}>Chi tiết</th>
             </tr>
           </thead>
@@ -102,8 +90,7 @@ const DroneAdmin = () => {
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.id}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.name}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.status}</td>
-                {/* <td style={{padding:'10px 8px',textAlign:'center'}}>{d.location}</td> */}
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{d.userId}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}>{d.launchpad}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>
                   <button onClick={()=>alert('Chức năng xem chi tiết drone và các đơn hàng sẽ được bổ sung!')} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>
                 </td>

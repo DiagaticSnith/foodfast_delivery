@@ -7,6 +7,9 @@ const OrderAdmin = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [drones, setDrones] = useState([]);
+  const [assigning, setAssigning] = useState({});
+  const [tab, setTab] = useState('needAssign');
   const pageSize = 5;
 
   const fetchOrders = async () => {
@@ -18,21 +21,37 @@ const OrderAdmin = () => {
     setUsers(res.data);
   };
 
-  useEffect(() => { fetchOrders(); fetchUsers(); }, []);
+  useEffect(() => { fetchOrders(); fetchUsers(); fetchDrones(); }, []);
+
+  const fetchDrones = async () => {
+    const res = await axios.get('/api/drones');
+    setDrones(res.data.filter(d => d.status === 'available'));
+  };
+
+  // Đơn cần gán drone: status === 'Accepted' && chưa có droneId
+  const needAssignOrders = orders.filter(o => o.status === 'Accepted' && !o.droneId);
+  // Lịch sử đơn đã gán drone: đã có droneId
+  const assignedOrders = orders.filter(o => o.droneId);
 
   // Tìm kiếm theo mã đơn hoặc trạng thái
-  const filtered = orders.filter(o =>
+  const filteredNeedAssign = needAssignOrders.filter(o =>
     o.id.toString().includes(search) ||
     (o.status || '').toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paged = filtered.slice((page-1)*pageSize, page*pageSize);
+  const filteredAssigned = assignedOrders.filter(o =>
+    o.id.toString().includes(search) ||
+    (o.status || '').toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil((tab==='needAssign'?filteredNeedAssign.length:filteredAssigned.length) / pageSize) || 1;
+  const paged = (tab==='needAssign'?filteredNeedAssign:filteredAssigned).slice((page-1)*pageSize, page*pageSize);
 
   return (
     <div style={{marginBottom:40}}>
-  <h3 style={{marginBottom:20, color:'#ff4d4f'}}>Quản lý Đơn hàng</h3>
-      <div style={{marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm mã đơn hoặc trạng thái..." style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16,minWidth:220}} />
+      <h3 style={{marginBottom:20, color:'#ff4d4f'}}>Quản lý Đơn hàng</h3>
+      <div style={{display:'flex',gap:16,marginBottom:16}}>
+        <button onClick={()=>{setTab('needAssign');setPage(1);}} style={{padding:'10px 32px',border:'none',borderRadius:10,background:tab==='needAssign'?'#ff4d4f':'#eee',color:tab==='needAssign'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đơn cần gán drone</button>
+        <button onClick={()=>{setTab('assigned');setPage(1);}} style={{padding:'10px 32px',border:'none',borderRadius:10,background:tab==='assigned'?'#ff4d4f':'#eee',color:tab==='assigned'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Lịch sử đơn đã gán</button>
+        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm mã đơn hoặc trạng thái..." style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16,minWidth:220,marginLeft:'auto'}} />
       </div>
       <div style={{overflowX:'auto',borderRadius:12,boxShadow:'0 2px 8px #eee'}}>
         <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
@@ -44,7 +63,7 @@ const OrderAdmin = () => {
               <th style={{padding:'12px 8px'}}>Trạng thái giao</th>
               <th style={{padding:'12px 8px'}}>Địa chỉ</th>
               <th style={{padding:'12px 8px'}}>Drone</th>
-              <th style={{padding:'12px 8px'}}>Shipper</th>
+              <th style={{padding:'12px 8px'}}>Gán drone</th>
               <th style={{padding:'12px 8px'}}>Chi tiết</th>
             </tr>
           </thead>
@@ -52,7 +71,7 @@ const OrderAdmin = () => {
             {paged.map(o => (
               <tr key={o.id} style={{borderBottom:'1px solid #f0f0f0',transition:'background 0.2s'}}>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.id}</td>
-                <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{users.find(u=>u.id===o.userId)?.username || o.userId}</td>
+                <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{users.find(u=>u.id===o.userId)?.name || o.userId}</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{Number(o.total).toLocaleString()}₫</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>
                   <span style={{color: o.status === 'Done' ? '#189c38' : '#ff4d4f', fontWeight:600}}>
@@ -61,13 +80,33 @@ const OrderAdmin = () => {
                 </td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.address}</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.droneId ? `#${o.droneId}` : 'Chưa gán'}</td>
-                <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{(() => {
-                  if (o.Drone && o.Drone.userId) {
-                    const shipper = users.find(u => u.id === o.Drone.userId && u.role === 'shipper');
-                    return shipper ? shipper.username : '';
-                  }
-                  return '';
-                })()}</td>
+                <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>
+                  {!o.droneId && (
+                    <select
+                      value={assigning[o.id] || ''}
+                      onChange={e => setAssigning(a => ({ ...a, [o.id]: e.target.value }))}
+                      style={{marginRight:8,padding:6,borderRadius:6,border:'1px solid #ccc'}}
+                    >
+                      <option value="">Chọn drone</option>
+                      {drones.map(d => (
+                        <option key={d.id} value={d.id}>{d.name} (#{d.id})</option>
+                      ))}
+                    </select>
+                  )}
+                  {!o.droneId && (
+                    <button
+                      style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 12px',fontWeight:500,cursor:'pointer'}}
+                      disabled={!assigning[o.id]}
+                      onClick={async () => {
+                        if (!assigning[o.id]) return;
+                        await axios.put(`/api/orders/${o.id}/assign-drone`, { droneId: assigning[o.id] });
+                        setAssigning(a => ({ ...a, [o.id]: '' }));
+                        fetchOrders();
+                        fetchDrones();
+                      }}
+                    >Gán</button>
+                  )}
+                </td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>
                   <button style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}} onClick={()=>setSelectedOrder(o)}>Xem chi tiết</button>
                 </td>
@@ -88,7 +127,7 @@ const OrderAdmin = () => {
           <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.3)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setSelectedOrder(null)}>
             <div style={{background:'#fff',padding:32,borderRadius:12,minWidth:400,maxWidth:600,boxShadow:'0 2px 16px #888',position:'relative'}} onClick={e=>e.stopPropagation()}>
               <h2>Chi tiết đơn #{selectedOrder.id}</h2>
-              <div><b>Khách hàng:</b> {users.find(u=>u.id===selectedOrder.userId)?.username || selectedOrder.userId}</div>
+              <div><b>Khách hàng:</b> {users.find(u=>u.id===selectedOrder.userId)?.name || selectedOrder.userId}</div>
               <div><b>Địa chỉ:</b> {selectedOrder.address}</div>
               <div><b>Tổng tiền:</b> {Number(selectedOrder.total).toLocaleString()}₫</div>
               <div><b>Trạng thái:</b> <span style={{color:selectedOrder.status==='Done'?'#189c38':'#ff4d4f',fontWeight:600}}>{selectedOrder.status === 'Done' ? 'Đã giao' : 'Chưa giao'}</span></div>

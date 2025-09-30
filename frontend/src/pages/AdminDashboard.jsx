@@ -34,7 +34,7 @@ const AdminDashboard = () => {
             <button onClick={()=>setSubTab('menu')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='menu'?'#189c38':'#eee',color:subTab==='menu'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Menu</button>
             <button onClick={()=>setSubTab('drone')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='drone'?'#189c38':'#eee',color:subTab==='drone'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Drone</button>
             <button onClick={()=>setSubTab('order')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='order'?'#ff4d4f':'#eee',color:subTab==='order'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Đơn hàng</button>
-            <button onClick={()=>setSubTab('shipper')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='shipper'?'#189c38':'#eee',color:subTab==='shipper'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Shipper</button>
+            <button onClick={()=>setSubTab('shipper')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='shipper'?'#189c38':'#eee',color:subTab==='shipper'?'#fff':'#333',fontWeight:600,fontSize:16}}>Đối tác kinh doanh</button>
           </div>
           {subTab === 'restaurant' && <RestaurantAdmin />}
           {subTab === 'menu' && <MenuAdmin />}

@@ -58,8 +58,8 @@ exports.getAllOrders = async (req, res) => {
     const { Drone, User, OrderDetail, Menu } = require('../models');
     const orders = await Order.findAll({
       include: [
-        { model: Drone, attributes: ['id', 'name', 'userId'] },
-        { model: User, attributes: ['id', 'username', 'email', 'role'] },
+        { model: Drone, attributes: ['id', 'name'] },
+  { model: User, attributes: ['id', 'username', 'email', 'role', 'name'] },
         { model: OrderDetail, attributes: ['id', 'menuId', 'quantity', 'price'], include: [
           { model: Menu, attributes: ['id', 'name'] }
         ] }
@@ -99,7 +99,7 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    if (!['Pending', 'Done'].includes(status)) {
+    if (!['Pending', 'Accepted', 'Done'].includes(status)) {
       return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
     }
     const order = await Order.findByPk(id);

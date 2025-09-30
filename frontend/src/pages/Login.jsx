@@ -17,6 +17,8 @@ const Login = ({ setUser }) => {
     localStorage.setItem('token', res.data.token);
     if (res.data.user?.role === 'admin') {
       navigate('/admin-dashboard');
+    } else if (res.data.user?.role === 'restaurant') {
+      navigate('/restaurant-dashboard');
     } else {
       navigate('/');
     }

@@ -5,6 +5,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';
 import Home from './pages/Home';
+import UserDashboard from './pages/UserDashboard';
+import RestaurantDashboard from './pages/RestaurantDashboard';
 import CartPage from './pages/CartPage';
 import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
@@ -36,7 +38,14 @@ function App() {
       <Router>
         <Header user={user} setUser={setUser} />
         <Routes>
-          <Route path="/" element={<Home />} />
+          {/* Trang chủ sẽ tự động điều hướng về dashboard phù hợp nếu đã đăng nhập */}
+          <Route path="/" element={
+            user ? (
+              user.role === 'admin' ? <AdminDashboard /> :
+              user.role === 'restaurant' ? <RestaurantDashboard /> :
+              <Home />
+            ) : <Home />
+          } />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
@@ -46,6 +55,8 @@ function App() {
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/restaurant-dashboard" element={<RestaurantDashboard />} />
+          <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/shipper-dashboard" element={<ShipperDashboard />} />
           <Route path="/user-info" element={<UserInfo user={user} setUser={setUser} />} />
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />

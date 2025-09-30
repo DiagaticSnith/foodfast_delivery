@@ -15,20 +15,16 @@ const Drone = sequelize.define('Drone', {
     type: DataTypes.STRING,
     defaultValue: 'available', // available, busy, maintenance
   },
-  userId: {
-    type: DataTypes.INTEGER,
-    allowNull: true, // shipper assigned
-    references: {
-      model: 'Users',
-      key: 'id',
-    },
+  launchpad: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
 }, {
   tableName: 'Drones'
 });
 
+
 Drone.associate = (models) => {
-  Drone.belongsTo(models.User, { foreignKey: 'userId' });
   Drone.hasMany(models.Order, { foreignKey: 'droneId' });
 };
 

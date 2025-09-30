@@ -5,17 +5,20 @@ exports.createCheckoutSession = async (req, res) => {
   try {
     const { cartItems, address, userId } = req.body;
     // Chuyển cartItems sang line_items cho Stripe
-    const line_items = cartItems.map(item => ({
-      price_data: {
-        currency: 'vnd',
-        product_data: {
-          name: item.name,
-          images: [item.imageUrl],
+    const line_items = cartItems.map(item => {
+      const productData = { name: item.name };
+      if (item.imageUrl && item.imageUrl.trim() !== '') {
+        productData.images = [item.imageUrl];
+      }
+      return {
+        price_data: {
+          currency: 'vnd',
+          product_data: productData,
+          unit_amount: Math.round(item.price),
         },
-        unit_amount: Math.round(item.price),
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items,

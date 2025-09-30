@@ -1,10 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Header = ({ user, setUser }) => (
+const Header = ({ user, setUser }) => {
+    // Xác định đường dẫn về dashboard phù hợp
+    let homePath = '/';
+    if (user) {
+        if (user.role === 'admin') homePath = '/admin-dashboard';
+        else if (user.role === 'restaurant') homePath = '/restaurant-dashboard';
+        else homePath = '/';
+    }
+    return (
 	<header className="header">
 		<nav className="navbar">
-			<Link className="navbar-brand" to="/">Fastfood Delivery</Link>
+			<Link className="navbar-brand" to={homePath}>Fastfood Delivery</Link>
 			<div>
 				<Link to="/cart">Giỏ hàng</Link>
 				<Link to="/order-history">Lịch sử đơn</Link>
@@ -63,6 +71,8 @@ const Header = ({ user, setUser }) => (
 			</div>
 		</nav>
 	</header>
-);
+
+    );
+};
 
 export default Header;
