@@ -1,0 +1,85 @@
+/* Shared admin UI styles */
+
+/* Layout */
+.ff-page { margin-bottom: 40px; }
+.ff-container { max-width: 1100px; margin: 24px auto; }
+.ff-toolbar { margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.ff-panel { margin-top: 20px; border: 1px solid #eee; border-radius: 12px; padding: 16px; background: #fff; }
+.ff-panel__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ff-panel__title { margin: 0; font-weight: 700; }
+
+/* Inputs */
+.ff-input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+.ff-input--min { min-width: 220px; }
+.ff-textarea { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+.ff-select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+.ff-checkbox { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Forms */
+.ff-form { display: grid; gap: 12px; }
+.ff-row { display: flex; gap: 10px; }
+.ff-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ff-2col { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: flex-start; }
+
+/* Buttons */
+.ff-btn { border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+.ff-btn--primary { background: #1677ff; color: #fff; }
+.ff-btn--danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+.ff-btn--success { background: #189c38; color: #fff; }
+.ff-btn--accent { background: #ff4d4f; color: #fff; }
+.ff-btn--warning { background: #ff9800; color: #fff; }
+.ff-btn--small { padding: 6px 12px; border-radius: 6px; font-weight: 500; }
+.ff-btn--ghost { background: #eee; color: #333; }
+
+/* Table */
+.ff-table-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 8px #eee; }
+.ff-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; table-layout: fixed; }
+.ff-table--wide { min-width: 1000px; }
+.ff-thead tr { background: #fafafa; font-weight: 600; }
+.ff-th, .ff-td { padding: 12px 8px; text-align: center; }
+.ff-td--ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-td--preline { white-space: pre-line; }
+.ff-tr { border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+.ff-tr:hover { background: #f6faff; }
+
+/* Badges */
+.ff-badge { font-size: 12px; background: #f5f5f5; padding: 2px 8px; border-radius: 999px; }
+.ff-badge--ok { color: #189c38; }
+.ff-badge--warn { color: #ff4d4f; }
+
+/* Pagination */
+.ff-pagination { margin-top: 16px; display: flex; gap: 8px; justify-content: center; }
+.ff-pagebtn { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+.ff-pagebtn--active { background: #ff4d4f; color: #fff; }
+.ff-pagebtn--normal { background: #eee; color: #333; }
+.ff-pagebtn--secondary { background: #189c38; color: #fff; }
+
+/* Images */
+.ff-img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
+.ff-img--preview { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+.ff-img--preview-lg { width: 220px; height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid #eee; background: #fafafa; }
+/* Image placeholder box to keep cell size even when no image */
+.ff-imgbox { width: 48px; height: 48px; border-radius: 8px; border: 1px solid #eee; background: #fafafa; display: inline-flex; align-items: center; justify-content: center; color: #bbb; font-size: 11px; }
+.ff-imgbox__ph { line-height: 1; }
+
+/* Utility */
+.ff-flex { display: flex; }
+.ff-gap-8 { gap: 8px; }
+.ff-gap-10 { gap: 10px; }
+.ff-gap-12 { gap: 12px; }
+.ff-justify-between { justify-content: space-between; }
+.ff-align-center { align-items: center; }
+.ff-mt-4 { margin-top: 4px; }
+.ff-mb-12 { margin-bottom: 12px; }
+.ff-minw-220 { min-width: 220px; }
+.ff-scroll-360 { max-height: 360px; overflow: auto; }
+.ff-mr-6 { margin-right: 6px; }
+.ff-flex-1 { flex: 1; }
+.ff-w-160 { width: 160px; }
+.ff-muted { color: #888; font-size: 12px; }
+
+/* Alerts */
+.ff-alert--warn { background: #fffbe6; color: #ad8b00; padding: 12px 20px; border-radius: 8px; margin-bottom: 16px; font-weight: 500; }
+
+/* Spacing helpers */
+.ff-mb-4 { margin-bottom: 16px; }

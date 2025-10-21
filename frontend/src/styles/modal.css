@@ -1,0 +1,58 @@
+/* Modal base styles */
+.ff-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ff-modal {
+  background: #fff;
+  border-radius: 12px;
+  min-width: 360px;
+  max-width: 90vw;
+  width: 560px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+}
+
+.ff-modal--lg {
+  width: 760px;
+}
+
+.ff-modal--xl {
+  width: 960px;
+}
+
+.ff-modal__header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.ff-modal__body {
+  padding: 18px;
+}
+
+.ff-modal__footer {
+  padding: 16px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ff-button--icon {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}

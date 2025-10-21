@@ -8,6 +8,7 @@ const Menu = sequelize.define('Menu', {
   description: DataTypes.STRING,
   category: DataTypes.STRING,
   imageUrl: DataTypes.STRING,
+  status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'active' },
   restaurantId: {
     type: DataTypes.INTEGER,
     allowNull: false,

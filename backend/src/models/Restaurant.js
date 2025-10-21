@@ -31,9 +31,10 @@ const Restaurant = sequelize.define('Restaurant', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
-  noFlyZones: {
-    type: DataTypes.JSON,
-    allowNull: true,
+  status: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'active',
   },
   userId: {
     type: DataTypes.INTEGER,

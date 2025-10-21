@@ -3,7 +3,10 @@ const { Restaurant, Menu } = require('../models');
 module.exports = {
   async getAll(req, res) {
     try {
-      const restaurants = await Restaurant.findAll({ include: Menu });
+  const { includeHidden, status } = req.query;
+  const where = status ? { status } : (includeHidden ? {} : { status: 'active' });
+  const menuWhere = status ? { status } : (includeHidden ? undefined : { status: 'active' });
+  const restaurants = await Restaurant.findAll({ where, include: { model: Menu, where: menuWhere, required: false } });
       res.json(restaurants);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -11,7 +14,9 @@ module.exports = {
   },
   async getById(req, res) {
     try {
-      const restaurant = await Restaurant.findByPk(req.params.id, { include: Menu });
+  const { includeHidden, status } = req.query;
+  const menuWhere = status ? { status } : (includeHidden ? undefined : { status: 'active' });
+  const restaurant = await Restaurant.findByPk(req.params.id, { include: { model: Menu, where: menuWhere, required: false } });
       if (!restaurant) return res.status(404).json({ error: 'Not found' });
       res.json(restaurant);
     } catch (err) {
@@ -40,8 +45,8 @@ module.exports = {
     try {
       const restaurant = await Restaurant.findByPk(req.params.id);
       if (!restaurant) return res.status(404).json({ error: 'Not found' });
-      await restaurant.destroy();
-      res.json({ message: 'Deleted' });
+      await restaurant.update({ status: 'hidden' });
+      res.json({ message: 'Hidden' });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

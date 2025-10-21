@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./src/config/db');
@@ -16,6 +17,7 @@ const stripeRoutes = require('./src/routes/stripeRoutes');
 const checkoutSuccessRoutes = require('./src/routes/checkoutSuccessRoutes');
 const webhookRoutes = require('./src/routes/webhookRoutes');
 const orderDetailRoutes = require('./src/routes/orderDetailRoutes');
+const uploadRoutes = require('./src/routes/uploadRoutes');
 
 const app = express();
 
@@ -44,6 +46,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/drones', droneRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/order-details', orderDetailRoutes);

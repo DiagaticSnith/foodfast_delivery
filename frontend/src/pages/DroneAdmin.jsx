@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Modal from '../components/Modal';
 
 const DroneAdmin = () => {
   const [drones, setDrones] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', status: 'available', launchpad: '' });
+  const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -19,6 +21,12 @@ const DroneAdmin = () => {
     fetchDrones();
   }, []);
 
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', status: 'available', launchpad: '' });
+    setOpenModal(true);
+  };
+
   const handleEdit = (d) => {
     setEditing(d.id);
     setForm({
@@ -26,6 +34,7 @@ const DroneAdmin = () => {
       status: d.status,
       launchpad: d.launchpad || ''
     });
+    setOpenModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -37,15 +46,19 @@ const DroneAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    if (editing) {
-      await axios.put(`/api/drones/${editing}`, form);
-    } else {
-      await axios.post('/api/drones', form);
+    try {
+      if (editing) {
+        await axios.put(`/api/drones/${editing}`, form);
+      } else {
+        await axios.post('/api/drones', form);
+      }
+      setOpenModal(false);
+      setEditing(null);
+      setForm({ name: '', status: 'available', launchpad: '' });
+      fetchDrones();
+    } finally {
+      setLoading(false);
     }
-    setEditing(null);
-    setForm({ name: '', status: 'available', launchpad: '' });
-    setLoading(false);
-    fetchDrones();
   };
 
   // Chỉ tìm kiếm theo tên drone
@@ -57,21 +70,32 @@ const DroneAdmin = () => {
 
   return (
     <div style={{marginBottom:40}}>
-      <h3 style={{marginBottom:20, color:'#189c38'}}>Quản lý Drone</h3>
       <div style={{marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
         <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm drone..." style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16,minWidth:220}} />
+        <button onClick={openCreate} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'10px 16px',fontWeight:600,cursor:'pointer'}}>+ Thêm drone</button>
       </div>
-      <form onSubmit={handleSubmit} style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap',alignItems:'center'}}>
-        <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tên drone" required style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))} style={{flex:'1 1 100px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}}>
-          <option value="available">available</option>
-          <option value="busy">busy</option>
-          <option value="maintenance">maintenance</option>
-        </select>
-        <input value={form.launchpad} onChange={e=>setForm(f=>({...f,launchpad:e.target.value}))} placeholder="Launchpad" style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <button type="submit" disabled={loading} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'10px 24px',fontWeight:600,fontSize:16,cursor:loading?'not-allowed':'pointer'}}>{editing ? 'Cập nhật' : 'Thêm mới'}</button>
-        {editing && <button type="button" style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'10px 18px',fontWeight:500,marginLeft:4,cursor:'pointer'}} onClick={()=>{setEditing(null);setForm({name:'',status:'available',launchpad:''});}}>Hủy</button>}
-      </form>
+      <Modal
+        open={openModal}
+        title={editing ? 'Cập nhật drone' : 'Thêm drone mới'}
+        onClose={()=>{setOpenModal(false); setEditing(null);}}
+        footer={null}
+      >
+        <form onSubmit={handleSubmit} style={{display:'grid',gap:12}}>
+          <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tên drone" required style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
+          <div style={{display:'flex',gap:12}}>
+            <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))} style={{flex:1,padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}}>
+              <option value="available">available</option>
+              <option value="busy">busy</option>
+              <option value="maintenance">maintenance</option>
+            </select>
+            <input value={form.launchpad} onChange={e=>setForm(f=>({...f,launchpad:e.target.value}))} placeholder="Launchpad" style={{flex:1,padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
+          </div>
+          <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:4}}>
+            <button type="button" onClick={()=>{setOpenModal(false); setEditing(null);}} style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'10px 18px',fontWeight:500,cursor:'pointer'}}>Hủy</button>
+            <button type="submit" disabled={loading} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'10px 24px',fontWeight:600,fontSize:16,cursor:loading?'not-allowed':'pointer'}}>{editing ? 'Cập nhật' : 'Thêm mới'}</button>
+          </div>
+        </form>
+      </Modal>
       <div style={{overflowX:'auto',borderRadius:12,boxShadow:'0 2px 8px #eee'}}>
         <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
           <thead>

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/api';
+import Modal from '../components/Modal';
+import '../styles/admin.css';
 
 
 const MenuAdmin = () => {
@@ -7,7 +9,9 @@ const MenuAdmin = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', price: '', description: '', category: '', imageUrl: '', restaurantId: '' });
+  const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -23,6 +27,12 @@ const MenuAdmin = () => {
 
   useEffect(() => { fetchMenus(); fetchRestaurants(); }, []);
 
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', price: '', description: '', category: '', imageUrl: '', restaurantId: '' });
+    setOpenModal(true);
+  };
+
   const handleEdit = (m) => {
     setEditing(m.id);
     setForm({
@@ -33,6 +43,7 @@ const MenuAdmin = () => {
       imageUrl: m.imageUrl,
       restaurantId: m.restaurantId
     });
+    setOpenModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -44,15 +55,19 @@ const MenuAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    if (editing) {
-      await api.put(`/api/menus/${editing}`, form);
-    } else {
-      await api.post('/api/menus', form);
+    try {
+      if (editing) {
+        await api.put(`/api/menus/${editing}`, form);
+      } else {
+        await api.post('/api/menus', form);
+      }
+      setOpenModal(false);
+      setEditing(null);
+      setForm({ name: '', price: '', description: '', category: '', imageUrl: '', restaurantId: '' });
+      fetchMenus();
+    } finally {
+      setLoading(false);
     }
-    setEditing(null);
-    setForm({ name: '', price: '', description: '', category: '', imageUrl: '', restaurantId: '' });
-    setLoading(false);
-    fetchMenus();
   };
 
   // Search & Pagination
@@ -64,63 +79,113 @@ const MenuAdmin = () => {
   const paged = filtered.slice((page-1)*pageSize, page*pageSize);
 
   return (
-    <div style={{marginBottom:40}}>
-      <h3 style={{marginBottom:20, color:'#189c38'}}>Quản lý Menu</h3>
-      <div style={{marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm menu..." style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16,minWidth:220}} />
+    <div className="ff-page">
+      <div className="ff-toolbar">
+        <input className="ff-input ff-input--min" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm menu..." />
+        <button onClick={openCreate} className="ff-btn ff-btn--success">+ Thêm món</button>
       </div>
-      <form onSubmit={handleSubmit} style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap',alignItems:'center'}}>
-        <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <input value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required style={{flex:'1 1 80px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <input value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" style={{flex:'1 1 100px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <input value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))} placeholder="Ảnh (URL)" style={{flex:'2 1 180px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <select value={form.restaurantId} onChange={e=>setForm(f=>({...f,restaurantId:e.target.value}))} required style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}}>
-          <option value="">Chọn nhà hàng</option>
-          {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-        </select>
-        <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" style={{flex:'2 1 180px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-        <button type="submit" disabled={loading} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'10px 24px',fontWeight:600,fontSize:16,cursor:loading?'not-allowed':'pointer'}}>{editing ? 'Cập nhật' : 'Thêm mới'}</button>
-        {editing && <button type="button" style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'10px 18px',fontWeight:500,marginLeft:4,cursor:'pointer'}} onClick={()=>{setEditing(null);setForm({name:'',price:'',description:'',category:'',imageUrl:'',restaurantId:''});}}>Hủy</button>}
-      </form>
-      <div style={{overflowX:'auto',borderRadius:12,boxShadow:'0 2px 8px #eee'}}>
-        <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
+      <Modal
+        open={openModal}
+        title={editing ? 'Cập nhật món' : 'Thêm món mới'}
+        onClose={()=>{setOpenModal(false); setEditing(null);}}
+        footer={null}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="ff-form ff-2col">
+          {/* Left: Upload + Preview */}
+          <div>
+            <div className="ff-row" style={{flexDirection:'column', gap:12}}>
+              <input type="file" accept="image/*" onChange={async (e)=>{
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingImage(true);
+                try {
+                  const fd = new FormData();
+                  fd.append('image', file);
+                  const res = await api.post('/api/upload?folder=menus', fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                  });
+                  setForm(f=>({...f, imageUrl: res.data.url }));
+                } catch (err) {
+                  const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
+                  alert(msg);
+                } finally {
+                  setUploadingImage(false);
+                }
+              }} />
+              {uploadingImage && <span className="ff-muted">Đang tải ảnh...</span>}
+              {form.imageUrl && (
+                <img src={form.imageUrl} alt="preview-menu" className="ff-img--preview-lg" onError={(e)=>{e.currentTarget.style.display='none';}} />
+              )}
+            </div>
+          </div>
+          {/* Right: Fields */}
+          <div>
+            <input className="ff-input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required />
+            <div className="ff-row">
+              <input className="ff-input ff-flex-1" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required />
+              <input className="ff-input ff-flex-1" value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" />
+            </div>
+            <input className="ff-input" value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))} placeholder="Ảnh (URL)" />
+            <select className="ff-select" value={form.restaurantId} onChange={e=>setForm(f=>({...f,restaurantId:e.target.value}))} required>
+              <option value="">Chọn nhà hàng</option>
+              {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <textarea className="ff-textarea" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" rows={4} />
+            <div className="ff-actions ff-mt-4">
+              <button type="button" onClick={()=>{setOpenModal(false); setEditing(null);}} className="ff-btn ff-btn--ghost">Hủy</button>
+              <button type="submit" disabled={loading||uploadingImage} className="ff-btn ff-btn--success">{editing ? 'Cập nhật' : 'Thêm mới'}</button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+      <div className="ff-table-wrap">
+  <table className="ff-table ff-table--wide">
           <thead>
             <tr style={{background:'#fafafa',fontWeight:600}}>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>ID</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>Tên</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>Giá</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>Phân loại</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>Nhà hàng</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>Ảnh</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}>Mô tả</th>
-              <th style={{padding:'12px 8px',textAlign:'center'}}></th>
+              <th className="ff-th">ID</th>
+              <th className="ff-th">Tên</th>
+              <th className="ff-th">Giá</th>
+              <th className="ff-th">Phân loại</th>
+              <th className="ff-th">Nhà hàng</th>
+              <th className="ff-th">Ảnh</th>
+              <th className="ff-th">Mô tả</th>
+              <th className="ff-th"></th>
             </tr>
           </thead>
           <tbody>
             {paged.map(m => (
-              <tr key={m.id} style={{borderBottom:'1px solid #f0f0f0',transition:'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#f6faff'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.id}</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.name}</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{Number(m.price).toLocaleString()}₫</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.category}</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{restaurants.find(r=>r.id===m.restaurantId)?.name || m.restaurantId}</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{m.imageUrl && <img src={m.imageUrl} alt={m.name} style={{width:48,height:48,objectFit:'cover',borderRadius:8}} />}</td>
-                <td style={{padding:'10px 8px',maxWidth:180,whiteSpace:'pre-line',overflow:'hidden',textOverflow:'ellipsis',textAlign:'center'}}>{m.description}</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>
-                  <button onClick={()=>handleEdit(m)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:'pointer'}}>Sửa</button>
-                  <button onClick={()=>handleDelete(m.id)} style={{background:'#fff',color:'#ff4d4f',border:'1px solid #ff4d4f',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xóa</button>
+              <tr key={m.id} className="ff-tr">
+                <td className="ff-td">{m.id}</td>
+                <td className="ff-td">{m.name}</td>
+                <td className="ff-td">{Number(m.price).toLocaleString()}₫</td>
+                <td className="ff-td">{m.category}</td>
+                <td className="ff-td">{restaurants.find(r=>r.id===m.restaurantId)?.name || m.restaurantId}</td>
+                <td className="ff-td">
+                  <span className="ff-imgbox">
+                    {m.imageUrl ? (
+                      <img src={m.imageUrl} alt={m.name} className="ff-img" onError={(e)=>{e.currentTarget.style.display='none';}} />
+                    ) : (
+                      <span className="ff-imgbox__ph">—</span>
+                    )}
+                  </span>
+                </td>
+                <td className="ff-td" style={{maxWidth:180,whiteSpace:'pre-line',overflow:'hidden',textOverflow:'ellipsis'}}>{m.description}</td>
+                <td className="ff-td">
+                  <button onClick={()=>handleEdit(m)} className="ff-btn ff-btn--success ff-btn--small ff-mr-6">Sửa</button>
+                  <button onClick={()=>handleDelete(m.id)} className="ff-btn ff-btn--danger ff-btn--small">Xóa</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         {totalPages > 1 && (
-          <div style={{marginTop:16,display:'flex',gap:8,justifyContent:'center'}}>
-            <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{padding:'6px 14px',borderRadius:6,border:'1px solid #eee',background:'#fff',color:'#333',fontWeight:600,cursor:page===1?'not-allowed':'pointer'}}>Trước</button>
+          <div className="ff-pagination">
+            <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="ff-pagebtn ff-pagebtn--normal">Trước</button>
             {Array.from({length:totalPages},(_,i)=>
-              <button key={i} onClick={()=>setPage(i+1)} style={{padding:'6px 12px',borderRadius:6,border:'none',background:page===i+1?'#189c38':'#eee',color:page===i+1?'#fff':'#333',fontWeight:600,cursor:'pointer'}}>{i+1}</button>
+              <button key={i} onClick={()=>setPage(i+1)} className={`ff-pagebtn ${page===i+1?'ff-pagebtn--secondary':'ff-pagebtn--normal'}`}>{i+1}</button>
             )}
-            <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{padding:'6px 14px',borderRadius:6,border:'1px solid #eee',background:'#fff',color:'#333',fontWeight:600,cursor:page===totalPages?'not-allowed':'pointer'}}>Sau</button>
+            <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} className="ff-pagebtn ff-pagebtn--normal">Sau</button>
           </div>
         )}
       </div>

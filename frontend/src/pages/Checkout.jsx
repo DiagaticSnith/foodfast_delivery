@@ -63,7 +63,7 @@ const Checkout = () => {
             setLoading(false);
           }}
         >
-          Thanh toán với Stripe
+          Thanh toán
         </button>
       </div>
     </div>

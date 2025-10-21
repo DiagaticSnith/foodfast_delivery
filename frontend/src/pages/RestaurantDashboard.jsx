@@ -1,20 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '../api/api';
+import Modal from '../components/Modal';
+import '../styles/admin.css';
 
 const RestaurantDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const [tab, setTab] = useState('menu');
+
+  // Menus state (with pagination + modal create/edit)
   const [menus, setMenus] = useState([]);
+  const [menuModalOpen, setMenuModalOpen] = useState(false);
+  const [menuForm, setMenuForm] = useState({ name: '', price: '', description: '', category: '', imageUrl: '' });
+  const [editingMenuId, setEditingMenuId] = useState(null);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [uploadingMenuImage, setUploadingMenuImage] = useState(false);
+  const [menuPage, setMenuPage] = useState(1);
+  const menuPageSize = 6;
+
+  // Orders state
   const [orders, setOrders] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [history, setHistory] = useState([]);
-  const [form, setForm] = useState({ name: '', price: '', description: '', category: '', imageUrl: '' });
-  const [editing, setEditing] = useState(null);
-  const [loading, setLoading] = useState(false);
-  // Modal từ chối đơn
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  // Reject modal
   const [rejectModal, setRejectModal] = useState({ open: false, orderId: null });
   const [rejectReason, setRejectReason] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null);
   // Từ chối đơn
   const handleRejectOrder = (orderId) => {
     setRejectModal({ open: true, orderId });
@@ -23,7 +33,7 @@ const RestaurantDashboard = () => {
   const handleSubmitReject = async (e) => {
     e.preventDefault();
     if (!rejectReason.trim()) return alert('Vui lòng nhập lý do từ chối!');
-    await axios.put(`/api/orders/${rejectModal.orderId}/reject`, { reason: rejectReason });
+    await api.put(`/api/orders/${rejectModal.orderId}/reject`, { reason: rejectReason });
     setRejectModal({ open: false, orderId: null });
     setRejectReason('');
     fetchOrders();
@@ -32,7 +42,6 @@ const RestaurantDashboard = () => {
 
   // Fetch menu, orders, history
   useEffect(() => {
-    // Đảm bảo chỉ gọi 1 lần khi mount
     if (user?.role === 'restaurant') {
       fetchMenus();
       fetchOrders();
@@ -42,21 +51,15 @@ const RestaurantDashboard = () => {
 
   const fetchMenus = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/menus?restaurantId=${user.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      setMenus(res.data);
+      const res = await api.get(`/api/menus?restaurantId=${user.id}`);
+      setMenus(res.data || []);
     } catch (err) {
       setMenus([]);
     }
   };
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/orders?restaurantId=${user.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      const res = await api.get(`/api/orders?restaurantId=${user.id}`);
       const allOrders = res.data;
       setPendingOrders(allOrders.filter(o => o.status === 'Pending'));
       setOrders(allOrders.filter(o => o.status === 'Accepted'));
@@ -68,190 +71,187 @@ const RestaurantDashboard = () => {
     }
   };
 
-  // CRUD menu
-  const handleEditMenu = (m) => {
-    setEditing(m.id);
-    setForm({
-      name: m.name,
-      price: m.price,
-      description: m.description,
-      category: m.category,
-      imageUrl: m.imageUrl
-    });
+  // CRUD menu (with modal + upload)
+  const openCreateMenu = () => {
+    setEditingMenuId(null);
+    setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });
+    setMenuModalOpen(true);
+  };
+  const openEditMenu = (m) => {
+    setEditingMenuId(m.id);
+    setMenuForm({ name: m.name, price: m.price, description: m.description || '', category: m.category || '', imageUrl: m.imageUrl || '' });
+    setMenuModalOpen(true);
   };
   const handleDeleteMenu = async (id) => {
-    if (!window.confirm('Xóa món này?')) return;
-    await axios.delete(`/api/menus/${id}`);
+    if (!window.confirm('Ẩn món ăn này?')) return;
+    await api.delete(`/api/menus/${id}`);
     fetchMenus();
   };
   const handleSubmitMenu = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    if (editing) {
-      await axios.put(`/api/menus/${editing}`, form, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-    } else {
-      await axios.post('/api/menus', { ...form, restaurantId: user.id }, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+    setMenuLoading(true);
+    try {
+      const body = { ...menuForm, restaurantId: user.id };
+      if (editingMenuId) {
+        await api.put(`/api/menus/${editingMenuId}`, body);
+      } else {
+        await api.post('/api/menus', body);
+      }
+      setMenuModalOpen(false);
+      setEditingMenuId(null);
+      setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });
+      fetchMenus();
+    } finally {
+      setMenuLoading(false);
     }
-    setEditing(null);
-    setForm({ name: '', price: '', description: '', category: '', imageUrl: '' });
-    setLoading(false);
-    fetchMenus();
   };
 
   // Nhận đơn
   const handleAcceptOrder = async (orderId) => {
-    const token = localStorage.getItem('token');
-    await axios.put(`/api/orders/${orderId}`, { status: 'Accepted' }, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
+    await api.put(`/api/orders/${orderId}`, { status: 'Accepted' });
     fetchOrders();
     alert('Đã nhận đơn, drone đang di chuyển tới nhà hàng!');
   };
   // Hoàn thành đơn
   const handleCompleteOrder = async (orderId) => {
-    const token = localStorage.getItem('token');
-    await axios.put(`/api/orders/${orderId}`, { status: 'Done' }, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
+    await api.put(`/api/orders/${orderId}`, { status: 'Done' });
     fetchOrders();
     alert('Đã hoàn thành đơn!');
   };
 
   return (
-  <div style={{maxWidth:1000,margin:'40px auto',background:'#fff',borderRadius:12,boxShadow:'0 2px 8px #eee',padding:32}}>
-      <div style={{display:'flex',gap:24,marginBottom:32}}>
-        <button onClick={()=>setTab('menu')} style={{padding:'12px 32px',border:'none',borderRadius:10,background:tab==='menu'?'#ff4d4f':'#eee',color:tab==='menu'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Quản lý Menu</button>
-        <button onClick={()=>setTab('pending')} style={{padding:'12px 32px',border:'none',borderRadius:10,background:tab==='pending'?'#ff4d4f':'#eee',color:tab==='pending'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đơn chờ nhận</button>
-        <button onClick={()=>setTab('accepted')} style={{padding:'12px 32px',border:'none',borderRadius:10,background:tab==='accepted'?'#ff4d4f':'#eee',color:tab==='accepted'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đơn đã nhận</button>
-        <button onClick={()=>setTab('history')} style={{padding:'12px 32px',border:'none',borderRadius:10,background:tab==='history'?'#ff4d4f':'#eee',color:tab==='history'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Lịch sử đơn đã giao</button>
+  <div className="ff-page ff-container">
+      <div className="ff-row ff-gap-12 ff-mb-4">
+        <button onClick={()=>setTab('menu')} className={`ff-btn ${tab==='menu' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Quản lý Menu</button>
+        <button onClick={()=>setTab('pending')} className={`ff-btn ${tab==='pending' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn chờ nhận</button>
+        <button onClick={()=>setTab('accepted')} className={`ff-btn ${tab==='accepted' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đã nhận</button>
+        <button onClick={()=>setTab('history')} className={`ff-btn ${tab==='history' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Lịch sử đơn đã giao</button>
       </div>
       {tab==='menu' && (
         <div>
-          <form onSubmit={handleSubmitMenu} style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap',alignItems:'center'}}>
-            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required style={{flex:'1 1 120px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-            <input value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required style={{flex:'1 1 80px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-            <input value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" style={{flex:'1 1 100px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-            <input value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))} placeholder="Ảnh (URL)" style={{flex:'2 1 180px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-            <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" style={{flex:'2 1 180px',padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} />
-            <button type="submit" disabled={loading} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'10px 24px',fontWeight:600,fontSize:16,cursor:loading?'not-allowed':'pointer'}}>{editing ? 'Cập nhật' : 'Thêm mới'}</button>
-            {editing && <button type="button" style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'10px 18px',fontWeight:500,marginLeft:4,cursor:'pointer'}} onClick={()=>{setEditing(null);setForm({name:'',price:'',description:'',category:'',imageUrl:''});}}>Hủy</button>}
-          </form>
-          <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden',boxShadow:'0 2px 8px #eee'}}>
-            <thead>
-              <tr style={{background:'#fafafa',fontWeight:600}}>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>ID</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Tên</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Giá</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Phân loại</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Ảnh</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Mô tả</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}></th>
+          <div className="ff-toolbar">
+            <button onClick={openCreateMenu} className="ff-btn ff-btn--success">+ Thêm món</button>
+          </div>
+
+          <table className="ff-table ff-table--wide">
+            <thead className="ff-thead">
+              <tr>
+                <th className="ff-th">ID</th>
+                <th className="ff-th">Ảnh</th>
+                <th className="ff-th">Tên</th>
+                <th className="ff-th">Giá</th>
+                <th className="ff-th">Phân loại</th>
+                <th className="ff-th">Mô tả</th>
+                <th className="ff-th">Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {menus.map(m => (
-                <tr key={m.id} style={{borderBottom:'1px solid #f0f0f0',transition:'background 0.2s'}}>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{m.id}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{m.name}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{Number(m.price).toLocaleString()}₫</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{m.category}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{m.imageUrl && <img src={m.imageUrl} alt={m.name} style={{width:48,height:48,objectFit:'cover',borderRadius:8}} />}</td>
-                  <td style={{padding:'10px 8px',maxWidth:180,whiteSpace:'pre-line',overflow:'hidden',textOverflow:'ellipsis',textAlign:'center'}}>{m.description}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>
-                    <button onClick={()=>handleEditMenu(m)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:'pointer'}}>Sửa</button>
-                    <button onClick={()=>handleDeleteMenu(m.id)} style={{background:'#fff',color:'#ff4d4f',border:'1px solid #ff4d4f',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xóa</button>
+              {menus.slice((menuPage-1)*menuPageSize, menuPage*menuPageSize).map(m => (
+                <tr key={m.id} className="ff-tr">
+                  <td className="ff-td">{m.id}</td>
+                  <td className="ff-td">
+                    <span className="ff-imgbox">
+                      {m.imageUrl ? (
+                        <img src={m.imageUrl} alt={m.name} className="ff-img" onError={(e)=>{e.currentTarget.style.display='none';}} />
+                      ) : (
+                        <span className="ff-imgbox__ph">—</span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="ff-td">{m.name}</td>
+                  <td className="ff-td">{Number(m.price).toLocaleString()}₫</td>
+                  <td className="ff-td">{m.category}</td>
+                  <td className="ff-td ff-td--preline" style={{maxWidth:240}}>{m.description}</td>
+                  <td className="ff-td">
+                    <button onClick={()=>openEditMenu(m)} className="ff-btn ff-btn--primary ff-btn--small" style={{marginRight:6}}>Sửa</button>
+                    <button onClick={()=>handleDeleteMenu(m.id)} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {Math.ceil(menus.length / menuPageSize) > 1 && (
+            <div className="ff-pagination">
+              <button onClick={()=>setMenuPage(p=>Math.max(1,p-1))} disabled={menuPage===1} className="ff-pagebtn ff-pagebtn--normal">Trước</button>
+              {Array.from({length: Math.ceil(menus.length / menuPageSize)}, (_,i)=> (
+                <button key={i} onClick={()=>setMenuPage(i+1)} className={`ff-pagebtn ${menuPage===i+1 ? 'ff-pagebtn--secondary' : 'ff-pagebtn--normal'}`}>{i+1}</button>
+              ))}
+              <button onClick={()=>setMenuPage(p=>Math.min(Math.ceil(menus.length/menuPageSize),p+1))} disabled={menuPage===Math.ceil(menus.length/menuPageSize)} className="ff-pagebtn ff-pagebtn--normal">Sau</button>
+            </div>
+          )}
         </div>
       )}
       {tab==='pending' && (
         <div>
           <h4>Đơn chờ nhận</h4>
-          <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden',boxShadow:'0 2px 8px #eee'}}>
-            <thead>
-              <tr style={{background:'#fafafa',fontWeight:600}}>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Mã đơn</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Khách hàng</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Tổng tiền</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Trạng thái</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Thao tác</th>
+          <table className="ff-table ff-table--wide">
+            <thead className="ff-thead">
+              <tr>
+                <th className="ff-th">Mã đơn</th>
+                <th className="ff-th">Khách hàng</th>
+                <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Trạng thái</th>
+                <th className="ff-th">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {pendingOrders.map(o => (
-                <tr key={o.id}>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.id}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.User?.name || o.customerName || o.name || o.userId}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{Number(o.total).toLocaleString()}₫</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.status}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>
-                    <button onClick={()=>handleAcceptOrder(o.id)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:'pointer'}}>Nhận đơn</button>
-                    <button onClick={()=>handleRejectOrder(o.id)} style={{background:'#fff',color:'#ff4d4f',border:'1px solid #ff4d4f',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:'pointer'}}>Từ chối</button>
-                    <button onClick={()=>setSelectedOrder(o)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>
+                <tr key={o.id} className="ff-tr">
+                  <td className="ff-td">{o.id}</td>
+                  <td className="ff-td">{o.User?.name || o.customerName || o.name || o.userId}</td>
+                  <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
+                  <td className="ff-td">{o.status}</td>
+                  <td className="ff-td">
+                    <button onClick={()=>handleAcceptOrder(o.id)} className="ff-btn ff-btn--success ff-btn--small" style={{marginRight:6}}>Nhận đơn</button>
+                    <button onClick={()=>handleRejectOrder(o.id)} className="ff-btn ff-btn--danger ff-btn--small" style={{marginRight:6}}>Từ chối</button>
+                    <button onClick={()=>setSelectedOrder(o)} className="ff-btn ff-btn--primary ff-btn--small">Xem chi tiết</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
           {/* Modal từ chối đơn */}
-          {rejectModal.open && (
-            <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.2)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
-              <form onSubmit={handleSubmitReject} style={{background:'#fff',padding:32,borderRadius:12,minWidth:320,boxShadow:'0 2px 8px #aaa',display:'flex',flexDirection:'column',gap:16}}>
-                <h3>Lý do từ chối đơn #{rejectModal.orderId}</h3>
-                <textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối..." rows={4} style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16}} required />
-                <div style={{display:'flex',gap:12,justifyContent:'flex-end'}}>
-                  <button type="button" onClick={()=>setRejectModal({open:false,orderId:null})} style={{background:'#eee',color:'#333',border:'none',borderRadius:8,padding:'8px 18px',fontWeight:500,cursor:'pointer'}}>Hủy</button>
-                  <button type="submit" style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:8,padding:'8px 24px',fontWeight:600,cursor:'pointer'}}>Xác nhận từ chối</button>
-                </div>
-              </form>
-            </div>
-          )}
+          <Modal open={rejectModal.open} title={`Lý do từ chối đơn #${rejectModal.orderId || ''}`} onClose={()=>setRejectModal({open:false,orderId:null})} footer={null}>
+            <form onSubmit={handleSubmitReject} className="ff-form">
+              <textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối..." rows={4} className="ff-textarea" required />
+              <div className="ff-actions">
+                <button type="button" onClick={()=>setRejectModal({open:false,orderId:null})} className="ff-btn ff-btn--ghost">Hủy</button>
+                <button type="submit" className="ff-btn ff-btn--danger">Xác nhận từ chối</button>
+              </div>
+            </form>
+          </Modal>
         </div>
       )}
       {tab==='accepted' && (
         <div>
           <h4>Đơn đã nhận</h4>
-          {/* Thông báo nếu có đơn đã nhận nhưng chưa được gán drone */}
           {orders.some(o => !o.droneId) && (
-            <div style={{background:'#fffbe6',color:'#ad8b00',padding:'12px 20px',borderRadius:8,marginBottom:16,fontWeight:500,fontSize:16}}>
-              Hiện tại các drone đang trên đường tới. Đợi ít phút nữa.
-            </div>
+            <div className="ff-alert--warn">Hiện tại các drone đang trên đường tới. Đợi ít phút nữa.</div>
           )}
-          <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden',boxShadow:'0 2px 8px #eee'}}>
-            <thead>
-              <tr style={{background:'#fafafa',fontWeight:600}}>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Mã đơn</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Khách hàng</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Tổng tiền</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Trạng thái</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Thao tác</th>
+          <table className="ff-table ff-table--wide">
+            <thead className="ff-thead">
+              <tr>
+                <th className="ff-th">Mã đơn</th>
+                <th className="ff-th">Khách hàng</th>
+                <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Trạng thái</th>
+                <th className="ff-th">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {orders.map(o => (
-                <tr key={o.id}>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.id}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.User?.name || o.customerName || o.name || o.userId}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{Number(o.total).toLocaleString()}₫</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.status}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>
+                <tr key={o.id} className="ff-tr">
+                  <td className="ff-td">{o.id}</td>
+                  <td className="ff-td">{o.User?.name || o.customerName || o.name || o.userId}</td>
+                  <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
+                  <td className="ff-td">{o.status}</td>
+                  <td className="ff-td">
                     {o.droneId && o.Drone?.name && (
                       <span style={{marginRight:8,color:'#189c38',fontWeight:500}}>Drone: {o.Drone.name} (#{o.droneId})</span>
                     )}
-                    <button
-                      onClick={()=>handleCompleteOrder(o.id)}
-                      style={{background:'#ff9800',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,marginRight:6,cursor:o.droneId?'pointer':'not-allowed',opacity:o.droneId?1:0.5}}
-                      disabled={!o.droneId}
-                    >Đã hoàn thành</button>
-                    <button onClick={()=>setSelectedOrder(o)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>
+                    <button onClick={()=>handleCompleteOrder(o.id)} className="ff-btn ff-btn--warning ff-btn--small" disabled={!o.droneId} style={{opacity:o.droneId?1:0.5, marginRight:6}}>Đã hoàn thành</button>
+                    <button onClick={()=>setSelectedOrder(o)} className="ff-btn ff-btn--primary ff-btn--small">Xem chi tiết</button>
                   </td>
                 </tr>
               ))}
@@ -262,24 +262,25 @@ const RestaurantDashboard = () => {
       {tab==='history' && (
         <div>
           <h4>Lịch sử đơn đã giao</h4>
-          <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden',boxShadow:'0 2px 8px #eee'}}>
-            <thead>
-              <tr style={{background:'#fafafa',fontWeight:600}}>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Mã đơn</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Khách hàng</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Tổng tiền</th>
-                <th style={{padding:'12px 8px',textAlign:'center'}}>Trạng thái</th>
+          <table className="ff-table">
+            <thead className="ff-thead">
+              <tr>
+                <th className="ff-th">Mã đơn</th>
+                <th className="ff-th">Khách hàng</th>
+                <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Trạng thái</th>
+                <th className="ff-th"></th>
               </tr>
             </thead>
             <tbody>
               {history.map(o => (
-                <tr key={o.id}>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.id}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.User?.name || o.customerName || o.name || o.userId}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{Number(o.total).toLocaleString()}₫</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>{o.status}</td>
-                  <td style={{padding:'10px 8px',textAlign:'center'}}>
-                    <button onClick={()=>setSelectedOrder(o)} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>
+                <tr key={o.id} className="ff-tr">
+                  <td className="ff-td">{o.id}</td>
+                  <td className="ff-td">{o.User?.name || o.customerName || o.name || o.userId}</td>
+                  <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
+                  <td className="ff-td">{o.status}</td>
+                  <td className="ff-td">
+                    <button onClick={()=>setSelectedOrder(o)} className="ff-btn ff-btn--primary ff-btn--small">Xem chi tiết</button>
                   </td>
                 </tr>
               ))}
@@ -287,43 +288,91 @@ const RestaurantDashboard = () => {
           </table>
         </div>
       )}
-      {/* Modal xem chi tiết đơn - render ở cuối component để luôn hiển thị đúng */}
-      {selectedOrder && (
-        <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.3)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setSelectedOrder(null)}>
-          <div style={{background:'#fff',padding:32,borderRadius:12,minWidth:400,maxWidth:600,boxShadow:'0 2px 16px #888',position:'relative'}} onClick={e=>e.stopPropagation()}>
-            <h2>Chi tiết đơn #{selectedOrder.id}</h2>
+      {/* Modal thêm/sửa món */}
+  <Modal open={menuModalOpen} title={editingMenuId ? 'Cập nhật món' : 'Thêm món mới'} onClose={()=>{ setMenuModalOpen(false); setEditingMenuId(null); }} footer={null} size="lg">
+        <form onSubmit={handleSubmitMenu} className="ff-form ff-2col" style={{gap:16}}>
+          {/* Left: Upload + Preview */}
+          <div>
+            <div className="ff-row" style={{flexDirection:'column', gap:12}}>
+              <input type="file" accept="image/*" onChange={async (e)=>{
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingMenuImage(true);
+                try {
+                  const fd = new FormData();
+                  fd.append('image', file);
+                  const res = await api.post(`/api/upload?folder=menus`, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                  });
+                  setMenuForm(f=>({...f, imageUrl: res.data.url }));
+                } catch (err) {
+                  const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
+                  alert(msg);
+                } finally {
+                  setUploadingMenuImage(false);
+                }
+              }} />
+              {uploadingMenuImage && <span className="ff-muted">Đang tải ảnh...</span>}
+              {menuForm.imageUrl && (
+                <img src={menuForm.imageUrl} alt="preview-menu" className="ff-img--preview-lg" onError={(e)=>{e.currentTarget.style.display='none';}} />
+              )}
+            </div>
+          </div>
+          {/* Right: Fields */}
+          <div>
+            <div className="ff-row">
+              <input className="ff-input" value={menuForm.name} onChange={e=>setMenuForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required style={{flex:1}} />
+              <input className="ff-input" value={menuForm.price} onChange={e=>setMenuForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required style={{width:160}} />
+            </div>
+            <div className="ff-row">
+              <input className="ff-input" value={menuForm.category} onChange={e=>setMenuForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" style={{flex:1}} />
+              <input className="ff-input" value={menuForm.imageUrl} onChange={e=>setMenuForm(f=>({...f,imageUrl:e.target.value}))} placeholder="Ảnh (URL)" style={{flex:1}} />
+            </div>
+            <textarea className="ff-textarea" value={menuForm.description} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" rows={4} />
+            <div className="ff-actions">
+              {editingMenuId && <button type="button" onClick={()=>{setEditingMenuId(null); setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });}} className="ff-btn ff-btn--ghost">Hủy sửa</button>}
+              <button type="submit" disabled={menuLoading||uploadingMenuImage} className="ff-btn ff-btn--success">{editingMenuId ? 'Cập nhật món' : 'Thêm món'}</button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal xem chi tiết đơn */}
+      <Modal open={!!selectedOrder} title={selectedOrder ? `Chi tiết đơn #${selectedOrder.id}` : ''} onClose={()=>setSelectedOrder(null)} footer={null}>
+        {selectedOrder && (
+          <div>
             <div><b>Khách hàng:</b> {selectedOrder.User?.name || selectedOrder.customerName || selectedOrder.name || selectedOrder.userId}</div>
             <div><b>Địa chỉ:</b> {selectedOrder.address}</div>
             <div><b>Tổng tiền:</b> {Number(selectedOrder.total).toLocaleString()}₫</div>
-            <div><b>Trạng thái:</b> <span style={{color:selectedOrder.status==='Done'?'#189c38':'#ff4d4f',fontWeight:600}}>{selectedOrder.status}</span></div>
+            <div><b>Trạng thái:</b> <span className={`ff-badge ${selectedOrder.status==='Done' ? 'ff-badge--ok' : 'ff-badge--warn'}`}>{selectedOrder.status}</span></div>
             <div><b>Drone:</b> {selectedOrder.droneId ? `#${selectedOrder.droneId}` : 'Chưa gán'}</div>
             <div style={{margin:'16px 0'}}>
               <b>Danh sách món:</b>
-              <table style={{width:'100%',marginTop:8,borderCollapse:'collapse'}}>
-                <thead>
-                  <tr style={{background:'#fafafa'}}>
-                    <th style={{padding:'8px',textAlign:'center'}}>Tên món</th>
-                    <th style={{padding:'8px',textAlign:'center'}}>Số lượng</th>
-                    <th style={{padding:'8px',textAlign:'center'}}>Đơn giá</th>
+              <table className="ff-table ff-table--wide" style={{marginTop:8}}>
+                <thead className="ff-thead">
+                  <tr>
+                    <th className="ff-th">Tên món</th>
+                    <th className="ff-th">Số lượng</th>
+                    <th className="ff-th">Đơn giá</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(selectedOrder.OrderDetails || []).map(od => (
-                    <tr key={od.id}>
-                      <td style={{padding:'8px',textAlign:'center'}}>{od.Menu?.name || od.menuId}</td>
-                      <td style={{padding:'8px',textAlign:'center'}}>{od.quantity}</td>
-                      <td style={{padding:'8px',textAlign:'center'}}>{Number(od.price).toLocaleString()}₫</td>
+                    <tr key={od.id} className="ff-tr">
+                      <td className="ff-td">{od.Menu?.name || od.menuId}</td>
+                      <td className="ff-td">{od.quantity}</td>
+                      <td className="ff-td">{Number(od.price).toLocaleString()}₫</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div style={{marginTop:16,textAlign:'center'}}>
-              <button style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}} onClick={()=>setSelectedOrder(null)}>Đóng</button>
+            <div className="ff-actions">
+              <button className="ff-btn ff-btn--danger" onClick={()=>setSelectedOrder(null)}>Đóng</button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

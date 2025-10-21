@@ -8,6 +8,37 @@ export const setAuthToken = (token) => {
   api.defaults.headers['Authorization'] = `Bearer ${token}`;
 };
 
+// Always attach token from localStorage if available
+api.interceptors.request.use((config) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch {}
+  return config;
+});
+
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const status = error?.response?.status;
+    const msg = error?.response?.data?.message;
+    if ((status === 401) || (status === 403 && msg === 'Invalid token')) {
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch {}
+      if (typeof window !== 'undefined') {
+        alert('Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const userAPI = { register: (data) => api.post('/api/users/register', data), login: (data) => api.post('/api/users/login', data) };
 export const menuAPI = { getMenus: (params) => api.get('/api/menus', { params }), createMenu: (data) => api.post('/api/menus', data) };
 export const orderAPI = {

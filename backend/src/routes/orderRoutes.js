@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, getUserOrders, getOrderBySessionId, getAllOrders, assignShipper, assignDrone, updateOrderStatus } = require('../controllers/orderController');
+const { createOrder, getUserOrders, getOrderBySessionId, getAllOrders, assignShipper, assignDrone, updateOrderStatus, rejectOrder } = require('../controllers/orderController');
 const { authMiddleware } = require('../middleware/auth');
 // Cập nhật trạng thái đơn hàng (shipper xác nhận đã giao)
 router.put('/:id', authMiddleware, updateOrderStatus);
@@ -8,6 +8,8 @@ router.put('/:id', authMiddleware, updateOrderStatus);
 router.put('/:id/assign-shipper', assignShipper);
 // Admin gán drone cho đơn hàng
 router.put('/:id/assign-drone', assignDrone);
+// Nhà hàng từ chối đơn
+router.put('/:id/reject', authMiddleware, rejectOrder);
 
 // Lấy tất cả đơn hàng (admin)
 router.get('/', getAllOrders);

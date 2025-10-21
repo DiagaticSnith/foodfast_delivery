@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { setAuthToken } from './api/api';
 import './assets/style.css';
+import './styles/admin.css';
+import './styles/modal.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';

@@ -7,9 +7,6 @@ const OrderAdmin = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [drones, setDrones] = useState([]);
-  const [assigning, setAssigning] = useState({});
-  const [tab, setTab] = useState('needAssign');
   const pageSize = 5;
 
   const fetchOrders = async () => {
@@ -21,37 +18,20 @@ const OrderAdmin = () => {
     setUsers(res.data);
   };
 
-  useEffect(() => { fetchOrders(); fetchUsers(); fetchDrones(); }, []);
+  useEffect(() => { fetchOrders(); fetchUsers(); }, []);
 
-  const fetchDrones = async () => {
-    const res = await axios.get('/api/drones');
-    setDrones(res.data.filter(d => d.status === 'available'));
-  };
-
-  // Đơn cần gán drone: status === 'Accepted' && chưa có droneId
-  const needAssignOrders = orders.filter(o => o.status === 'Accepted' && !o.droneId);
-  // Lịch sử đơn đã gán drone: đã có droneId
-  const assignedOrders = orders.filter(o => o.droneId);
-
-  // Tìm kiếm theo mã đơn hoặc trạng thái
-  const filteredNeedAssign = needAssignOrders.filter(o =>
+  // Lọc theo tìm kiếm (mã đơn hoặc trạng thái)
+  const filtered = orders.filter(o =>
     o.id.toString().includes(search) ||
     (o.status || '').toLowerCase().includes(search.toLowerCase())
   );
-  const filteredAssigned = assignedOrders.filter(o =>
-    o.id.toString().includes(search) ||
-    (o.status || '').toLowerCase().includes(search.toLowerCase())
-  );
-  const totalPages = Math.ceil((tab==='needAssign'?filteredNeedAssign.length:filteredAssigned.length) / pageSize) || 1;
-  const paged = (tab==='needAssign'?filteredNeedAssign:filteredAssigned).slice((page-1)*pageSize, page*pageSize);
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const paged = filtered.slice((page-1)*pageSize, page*pageSize);
 
   return (
     <div style={{marginBottom:40}}>
-      <h3 style={{marginBottom:20, color:'#ff4d4f'}}>Quản lý Đơn hàng</h3>
       <div style={{display:'flex',gap:16,marginBottom:16}}>
-        <button onClick={()=>{setTab('needAssign');setPage(1);}} style={{padding:'10px 32px',border:'none',borderRadius:10,background:tab==='needAssign'?'#ff4d4f':'#eee',color:tab==='needAssign'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đơn cần gán drone</button>
-        <button onClick={()=>{setTab('assigned');setPage(1);}} style={{padding:'10px 32px',border:'none',borderRadius:10,background:tab==='assigned'?'#ff4d4f':'#eee',color:tab==='assigned'?'#fff':'#333',fontWeight:600,fontSize:16,cursor:'pointer'}}>Lịch sử đơn đã gán</button>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm mã đơn hoặc trạng thái..." style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16,minWidth:220,marginLeft:'auto'}} />
+        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm mã đơn hoặc trạng thái..." style={{padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:16,minWidth:280,marginLeft:'auto'}} />
       </div>
       <div style={{overflowX:'auto',borderRadius:12,boxShadow:'0 2px 8px #eee'}}>
         <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:12,overflow:'hidden'}}>
@@ -63,7 +43,6 @@ const OrderAdmin = () => {
               <th style={{padding:'12px 8px'}}>Trạng thái giao</th>
               <th style={{padding:'12px 8px'}}>Địa chỉ</th>
               <th style={{padding:'12px 8px'}}>Drone</th>
-              <th style={{padding:'12px 8px'}}>Gán drone</th>
               <th style={{padding:'12px 8px'}}>Chi tiết</th>
             </tr>
           </thead>
@@ -80,33 +59,6 @@ const OrderAdmin = () => {
                 </td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.address}</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.droneId ? `#${o.droneId}` : 'Chưa gán'}</td>
-                <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>
-                  {!o.droneId && (
-                    <select
-                      value={assigning[o.id] || ''}
-                      onChange={e => setAssigning(a => ({ ...a, [o.id]: e.target.value }))}
-                      style={{marginRight:8,padding:6,borderRadius:6,border:'1px solid #ccc'}}
-                    >
-                      <option value="">Chọn drone</option>
-                      {drones.map(d => (
-                        <option key={d.id} value={d.id}>{d.name} (#{d.id})</option>
-                      ))}
-                    </select>
-                  )}
-                  {!o.droneId && (
-                    <button
-                      style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 12px',fontWeight:500,cursor:'pointer'}}
-                      disabled={!assigning[o.id]}
-                      onClick={async () => {
-                        if (!assigning[o.id]) return;
-                        await axios.put(`/api/orders/${o.id}/assign-drone`, { droneId: assigning[o.id] });
-                        setAssigning(a => ({ ...a, [o.id]: '' }));
-                        fetchOrders();
-                        fetchDrones();
-                      }}
-                    >Gán</button>
-                  )}
-                </td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>
                   <button style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}} onClick={()=>setSelectedOrder(o)}>Xem chi tiết</button>
                 </td>

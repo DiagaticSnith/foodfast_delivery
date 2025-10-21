@@ -19,6 +19,15 @@ const Drone = sequelize.define('Drone', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  battery: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      min: 0,
+      max: 100,
+    },
+    comment: 'Battery level percentage 0-100',
+  },
 }, {
   tableName: 'Drones'
 });
