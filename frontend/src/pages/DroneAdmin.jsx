@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import StatusBadge from '../components/StatusBadge';
 import axios from 'axios';
 import Modal from '../components/Modal';
 
@@ -113,7 +114,7 @@ const DroneAdmin = () => {
               <tr key={d.id} style={{borderBottom:'1px solid #f0f0f0',transition:'background 0.2s'}} onMouseOver={e=>e.currentTarget.style.background='#f6faff'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.id}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.name}</td>
-                <td style={{padding:'10px 8px',textAlign:'center'}}>{d.status}</td>
+                <td style={{padding:'10px 8px',textAlign:'center'}}><StatusBadge status={d.status} /></td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.launchpad}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>
                   <button onClick={()=>alert('Chức năng xem chi tiết drone và các đơn hàng sẽ được bổ sung!')} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>

@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import StatusBadge from '../components/StatusBadge';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
@@ -52,19 +53,7 @@ const CheckoutSuccess = () => {
   <div style={{ marginBottom: 16 }}><b>Khách hàng:</b> {order.name || order.userId}</div>
       <div style={{ marginBottom: 16 }}><b>Địa chỉ:</b> {order.address}</div>
       <div style={{ marginBottom: 16 }}>
-        <b>Trạng thái:</b> 
-        <span style={{
-          display: 'inline-block',
-          marginLeft: 8,
-          padding: '2px 16px',
-          borderRadius: 16,
-          color: '#fff',
-          background: order.status === 'Paid' ? '#28a745' : '#ff4d4f',
-          fontWeight: 600,
-          fontSize: 16
-        }}>
-          {order.status === 'Paid' ? 'Đã thanh toán' : order.status === 'Unpaid' ? 'Chưa thanh toán' : order.status}
-        </span>
+        <b>Trạng thái:</b> <span style={{ marginLeft: 8 }}><StatusBadge status={order.status} /></span>
       </div>
       <div style={{ marginBottom: 16 }}><b>Chi tiết đơn hàng:</b></div>
       <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>

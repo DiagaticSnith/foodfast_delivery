@@ -14,8 +14,12 @@ const Header = ({ user, setUser }) => {
 		<nav className="navbar">
 			<Link className="navbar-brand" to={homePath}>Fastfood Delivery</Link>
 			<div>
-				<Link to="/cart">Giỏ hàng</Link>
-				<Link to="/order-history">Lịch sử đơn</Link>
+				{(!user || user.role !== 'admin') && (
+					<>
+						<Link to="/cart">Giỏ hàng</Link>
+						<Link to="/order-history">Lịch sử đơn</Link>
+					</>
+				)}
 						{user ? (
                                                                 <div style={{position:'relative',display:'inline-block',marginLeft:24}}>
                                                                     <button

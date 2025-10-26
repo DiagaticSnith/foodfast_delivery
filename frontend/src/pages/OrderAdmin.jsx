@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import StatusBadge from '../components/StatusBadge';
 
 const OrderAdmin = () => {
   const [orders, setOrders] = useState([]);
@@ -53,9 +54,7 @@ const OrderAdmin = () => {
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{users.find(u=>u.id===o.userId)?.name || o.userId}</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{Number(o.total).toLocaleString()}₫</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>
-                  <span style={{color: o.status === 'Done' ? '#189c38' : '#ff4d4f', fontWeight:600}}>
-                    {o.status === 'Done' ? 'Đã giao' : 'Chưa giao'}
-                  </span>
+                  <StatusBadge status={o.status} />
                 </td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.address}</td>
                 <td style={{padding:'10px 8px',textAlign:'center',verticalAlign:'middle'}}>{o.droneId ? `#${o.droneId}` : 'Chưa gán'}</td>
@@ -82,7 +81,7 @@ const OrderAdmin = () => {
               <div><b>Khách hàng:</b> {users.find(u=>u.id===selectedOrder.userId)?.name || selectedOrder.userId}</div>
               <div><b>Địa chỉ:</b> {selectedOrder.address}</div>
               <div><b>Tổng tiền:</b> {Number(selectedOrder.total).toLocaleString()}₫</div>
-              <div><b>Trạng thái:</b> <span style={{color:selectedOrder.status==='Done'?'#189c38':'#ff4d4f',fontWeight:600}}>{selectedOrder.status === 'Done' ? 'Đã giao' : 'Chưa giao'}</span></div>
+              <div><b>Trạng thái:</b> <StatusBadge status={selectedOrder.status} /></div>
               <div><b>Drone:</b> {selectedOrder.droneId ? `#${selectedOrder.droneId}` : 'Chưa gán'}</div>
               <div style={{margin:'16px 0'}}>
                 <b>Danh sách món:</b>

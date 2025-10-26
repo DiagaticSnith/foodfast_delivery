@@ -77,21 +77,44 @@ async function autoAssignDroneForOrder(orderId) {
   return assignedDroneId;
 }
 
-// Lấy tất cả đơn hàng (admin)
+// Lấy tất cả đơn hàng (admin hoặc nhà hàng với filter)
 exports.getAllOrders = async (req, res) => {
   try {
     const { Drone, User, OrderDetail, Menu } = require('../models');
-    const orders = await Order.findAll({
-      include: [
-        { model: Drone, attributes: ['id', 'name'] },
-  { model: User, attributes: ['id', 'username', 'email', 'role', 'name'] },
-        { model: OrderDetail, attributes: ['id', 'menuId', 'quantity', 'price'], include: [
-          { model: Menu, attributes: ['id', 'name'] }
-        ] }
-      ]
+    const { restaurantId } = req.query;
+    
+    // Build include options
+    const includeOptions = [
+      { model: Drone, attributes: ['id', 'name'] },
+      { model: User, attributes: ['id', 'username', 'email', 'role', 'name', 'address', 'phoneNumber'] },
+      { 
+        model: OrderDetail, 
+        attributes: ['id', 'menuId', 'quantity', 'price'], 
+        include: [
+          { model: Menu, attributes: ['id', 'name', 'restaurantId'] }
+        ] 
+      }
+    ];
+    
+    let orders = await Order.findAll({ 
+      include: includeOptions,
+      order: [['createdAt', 'DESC']]
     });
+    
+    // Nếu có restaurantId, filter đơn hàng theo nhà hàng
+    if (restaurantId) {
+      orders = orders.filter(order => {
+        // Kiểm tra xem có OrderDetail nào thuộc nhà hàng này không
+        if (!order.OrderDetails || order.OrderDetails.length === 0) return false;
+        return order.OrderDetails.some(od => 
+          od.Menu && od.Menu.restaurantId === parseInt(restaurantId)
+        );
+      });
+    }
+    
     res.json(orders);
   } catch (err) {
+    console.error('getAllOrders error:', err);
     res.status(500).json({ message: err.message });
   }
 }

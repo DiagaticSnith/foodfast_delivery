@@ -1,6 +1,6 @@
-import ShipperAdmin from './ShipperAdmin';
+import BusinessAdmin from './BusinessAdmin';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import RestaurantAdmin from './RestaurantAdmin';
 import MenuAdmin from './MenuAdmin';
 import DroneAdmin from './DroneAdmin';
@@ -8,8 +8,8 @@ import OrderAdmin from './OrderAdmin';
 import UserAdmin from './UserAdmin';
 
 const AdminDashboard = () => {
-  const [tab, setTab] = useState('manage');
-  const [subTab, setSubTab] = useState('restaurant');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get('tab') || 'restaurant');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,37 +20,26 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
+  const changeTab = (newTab) => {
+    setTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
+
   return (
     <div style={{ maxWidth: 1200, margin: '40px auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee', padding: 32 }}>
       <h1 style={{ color: '#ff4d4f', marginBottom: 32 }}>Admin Dashboard</h1>
-      <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
-        <button onClick={() => setTab('manage')} style={{ padding: '10px 32px', borderRadius: 8, border: 'none', background: tab === 'manage' ? '#ff4d4f' : '#eee', color: tab === 'manage' ? '#fff' : '#333', fontWeight: 600, fontSize: 18 }}>Quản trị dữ liệu</button>
-        <button onClick={() => setTab('monitor')} style={{ padding: '10px 32px', borderRadius: 8, border: 'none', background: tab === 'monitor' ? '#ff4d4f' : '#eee', color: tab === 'monitor' ? '#fff' : '#333', fontWeight: 600, fontSize: 18 }}>Monitoring Dashboard</button>
+      <div style={{display:'flex',gap:16,marginBottom:32,flexWrap:'wrap'}}>
+        <button onClick={()=>changeTab('restaurant')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='restaurant'?'#ff4d4f':'#eee',color:tab==='restaurant'?'#fff':'#333',fontWeight:600,fontSize:16}}>🏢 Nhà hàng</button>
+        <button onClick={()=>changeTab('drone')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='drone'?'#ff4d4f':'#eee',color:tab==='drone'?'#fff':'#333',fontWeight:600,fontSize:16}}>🚁 Drone</button>
+        <button onClick={()=>changeTab('order')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='order'?'#ff4d4f':'#eee',color:tab==='order'?'#fff':'#333',fontWeight:600,fontSize:16}}>📦 Đơn hàng</button>
+        <button onClick={()=>changeTab('business')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='business'?'#ff4d4f':'#eee',color:tab==='business'?'#fff':'#333',fontWeight:600,fontSize:16}}>🤝 Đối tác</button>
+        <button onClick={()=>changeTab('user')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='user'?'#ff4d4f':'#eee',color:tab==='user'?'#fff':'#333',fontWeight:600,fontSize:16}}>👥 Người dùng</button>
       </div>
-      {tab === 'manage' && (
-        <div>
-          <div style={{display:'flex',gap:16,margin:'24px 0'}}>
-            <button onClick={()=>setSubTab('restaurant')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='restaurant'?'#ff4d4f':'#eee',color:subTab==='restaurant'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Nhà hàng</button>
-            {/* Menu đã được gộp vào tab Nhà hàng */}
-            <button onClick={()=>setSubTab('drone')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='drone'?'#189c38':'#eee',color:subTab==='drone'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Drone</button>
-            <button onClick={()=>setSubTab('order')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='order'?'#ff4d4f':'#eee',color:subTab==='order'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Đơn hàng</button>
-            <button onClick={()=>setSubTab('shipper')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='shipper'?'#189c38':'#eee',color:subTab==='shipper'?'#fff':'#333',fontWeight:600,fontSize:16}}>Đối tác kinh doanh</button>
-            <button onClick={()=>setSubTab('user')} style={{padding:'10px 32px',borderRadius:8,border:'none',background:subTab==='user'?'#189c38':'#eee',color:subTab==='user'?'#fff':'#333',fontWeight:600,fontSize:16}}>Quản lý Người dùng</button>
-          </div>
-          {subTab === 'restaurant' && <RestaurantAdmin />}
-          {subTab === 'drone' && <DroneAdmin />}
-          {subTab === 'order' && <OrderAdmin />}
-          {subTab === 'shipper' && <ShipperAdmin />}
-          {subTab === 'user' && <UserAdmin />}
-        </div>
-      )}
-      {tab === 'monitor' && (
-        <div>
-          <h2>Theo dõi hệ thống & Metrics real-time</h2>
-          {/* TODO: Thêm các component hiển thị metrics, health, trạng thái drone, đơn hàng... */}
-          <div style={{marginTop:24, color:'#888'}}>Đang phát triển module monitoring...</div>
-        </div>
-      )}
+      {tab === 'restaurant' && <RestaurantAdmin />}
+      {tab === 'drone' && <DroneAdmin />}
+      {tab === 'order' && <OrderAdmin />}
+      {tab === 'business' && <BusinessAdmin />}
+      {tab === 'user' && <UserAdmin />}
     </div>
   );
 };

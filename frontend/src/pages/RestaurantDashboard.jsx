@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/api';
 import Modal from '../components/Modal';
+import StatusBadge from '../components/StatusBadge';
+import { useSearchParams } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import '../styles/admin.css';
 
 const RestaurantDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user'));
-  const [tab, setTab] = useState('menu');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get('tab') || 'menu');
 
   // Menus state (with pagination + modal create/edit)
   const [menus, setMenus] = useState([]);
@@ -22,6 +26,20 @@ const RestaurantDashboard = () => {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [history, setHistory] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  
+  // Revenue stats
+  const [revenueData, setRevenueData] = useState([]);
+
+  // Helper: format date/time for display
+  const formatDateTime = (input) => {
+    if (!input) return '—';
+    const d = new Date(input);
+    if (isNaN(d.getTime())) return '—';
+    const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const date = d.toLocaleDateString('vi-VN');
+    return `${time} ${date}`;
+  };
+
   // Reject modal
   const [rejectModal, setRejectModal] = useState({ open: false, orderId: null });
   const [rejectReason, setRejectReason] = useState('');
@@ -61,14 +79,41 @@ const RestaurantDashboard = () => {
     try {
       const res = await api.get(`/api/orders?restaurantId=${user.id}`);
       const allOrders = res.data;
+      console.log('Orders từ API:', allOrders);
+      console.log('Order đầu tiên:', allOrders[0]);
       setPendingOrders(allOrders.filter(o => o.status === 'Pending'));
       setOrders(allOrders.filter(o => o.status === 'Accepted'));
-      setHistory(allOrders.filter(o => o.status === 'Done'));
+      const doneOrders = allOrders.filter(o => o.status === 'Done');
+      setHistory(doneOrders);
+      
+      // Tính toán doanh thu theo ngày
+      calculateRevenue(doneOrders);
     } catch (err) {
+      console.error('Lỗi fetchOrders:', err);
       setPendingOrders([]);
       setOrders([]);
       setHistory([]);
     }
+  };
+
+  const calculateRevenue = (doneOrders) => {
+    // Group orders by date (day precision)
+    const revenueByDate = new Map();
+    doneOrders.forEach(order => {
+      const d = new Date(order.updatedAt || order.createdAt);
+      // Normalize to midnight to group by day
+      const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const ts = normalized.getTime();
+      const prev = revenueByDate.get(ts) || 0;
+      revenueByDate.set(ts, prev + Number(order.total));
+    });
+
+    // Convert to array and sort ascending by timestamp
+    const chartData = Array.from(revenueByDate.entries())
+      .map(([ts, revenue]) => ({ ts, revenue, dateLabel: new Date(ts).toLocaleDateString('vi-VN') }))
+      .sort((a, b) => a.ts - b.ts);
+
+    setRevenueData(chartData);
   };
 
   // CRUD menu (with modal + upload)
@@ -119,14 +164,103 @@ const RestaurantDashboard = () => {
     alert('Đã hoàn thành đơn!');
   };
 
+  // Change tab and update URL
+  const changeTab = (newTab) => {
+    setTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
+
   return (
   <div className="ff-page ff-container">
       <div className="ff-row ff-gap-12 ff-mb-4">
-        <button onClick={()=>setTab('menu')} className={`ff-btn ${tab==='menu' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Quản lý Menu</button>
-        <button onClick={()=>setTab('pending')} className={`ff-btn ${tab==='pending' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn chờ nhận</button>
-        <button onClick={()=>setTab('accepted')} className={`ff-btn ${tab==='accepted' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đã nhận</button>
-        <button onClick={()=>setTab('history')} className={`ff-btn ${tab==='history' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Lịch sử đơn đã giao</button>
+        <button onClick={()=>changeTab('revenue')} className={`ff-btn ${tab==='revenue' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>📊 Doanh thu</button>
+        <button onClick={()=>changeTab('menu')} className={`ff-btn ${tab==='menu' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Quản lý Menu</button>
+        <button onClick={()=>changeTab('pending')} className={`ff-btn ${tab==='pending' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn chờ nhận</button>
+        <button onClick={()=>changeTab('accepted')} className={`ff-btn ${tab==='accepted' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đã nhận</button>
+        <button onClick={()=>changeTab('history')} className={`ff-btn ${tab==='history' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Lịch sử đơn đã giao</button>
       </div>
+
+      {tab==='revenue' && (
+        <div>
+          <h4>📊 Biểu đồ Doanh thu</h4>
+          
+          {/* Tổng quan */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+            <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Tổng doanh thu</div>
+              <div style={{ fontSize: 28, fontWeight: 'bold' }}>
+                {history.reduce((sum, o) => sum + Number(o.total), 0).toLocaleString()}₫
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Đơn hoàn thành</div>
+              <div style={{ fontSize: 28, fontWeight: 'bold' }}>{history.length}</div>
+            </div>
+            <div style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Đơn trung bình</div>
+              <div style={{ fontSize: 28, fontWeight: 'bold' }}>
+                {history.length > 0 ? Math.round(history.reduce((sum, o) => sum + Number(o.total), 0) / history.length).toLocaleString() : 0}₫
+              </div>
+            </div>
+            <div style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Đơn chờ xử lý</div>
+              <div style={{ fontSize: 28, fontWeight: 'bold' }}>{pendingOrders.length}</div>
+            </div>
+          </div>
+
+          {/* Biểu đồ đường - Doanh thu theo ngày */}
+          {revenueData.length > 0 ? (
+            <>
+              <div style={{ background: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: 24 }}>
+                <h5 style={{ marginBottom: 16 }}>Doanh thu theo ngày</h5>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="ts" 
+                      type="number" 
+                      scale="time" 
+                      domain={["auto", "auto"]}
+                      tickFormatter={(ts) => new Date(ts).toLocaleDateString('vi-VN')}
+                    />
+                    <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      labelFormatter={(ts) => new Date(ts).toLocaleDateString('vi-VN')}
+                      formatter={(value) => `${Number(value).toLocaleString()}₫`} 
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="revenue" stroke="#ff4d4f" strokeWidth={2} name="Doanh thu" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Biểu đồ cột */}
+              <div style={{ background: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <h5 style={{ marginBottom: 16 }}>Doanh thu theo cột</h5>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="dateLabel"
+                    />
+                    <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      formatter={(value) => `${Number(value).toLocaleString()}₫`} 
+                    />
+                    <Legend />
+                    <Bar dataKey="revenue" fill="#52c41a" name="Doanh thu" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: 48, color: '#888', background: '#f5f5f5', borderRadius: 12 }}>
+              Chưa có dữ liệu doanh thu. Hoàn thành một vài đơn hàng để xem biểu đồ!
+            </div>
+          )}
+        </div>
+      )}
+
       {tab==='menu' && (
         <div>
           <div className="ff-toolbar">
@@ -190,6 +324,7 @@ const RestaurantDashboard = () => {
                 <th className="ff-th">Mã đơn</th>
                 <th className="ff-th">Khách hàng</th>
                 <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Tạo lúc</th>
                 <th className="ff-th">Trạng thái</th>
                 <th className="ff-th">Thao tác</th>
               </tr>
@@ -198,9 +333,10 @@ const RestaurantDashboard = () => {
               {pendingOrders.map(o => (
                 <tr key={o.id} className="ff-tr">
                   <td className="ff-td">{o.id}</td>
-                  <td className="ff-td">{o.User?.name || o.customerName || o.name || o.userId}</td>
+                  <td className="ff-td">{o.User?.name || o.User?.username || o.customerName || `User #${o.userId}`}</td>
                   <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
-                  <td className="ff-td">{o.status}</td>
+                  <td className="ff-td">{formatDateTime(o.createdAt)}</td>
+                  <td className="ff-td"><StatusBadge status={o.status} /></td>
                   <td className="ff-td">
                     <button onClick={()=>handleAcceptOrder(o.id)} className="ff-btn ff-btn--success ff-btn--small" style={{marginRight:6}}>Nhận đơn</button>
                     <button onClick={()=>handleRejectOrder(o.id)} className="ff-btn ff-btn--danger ff-btn--small" style={{marginRight:6}}>Từ chối</button>
@@ -235,6 +371,7 @@ const RestaurantDashboard = () => {
                 <th className="ff-th">Mã đơn</th>
                 <th className="ff-th">Khách hàng</th>
                 <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Cập nhật lúc</th>
                 <th className="ff-th">Trạng thái</th>
                 <th className="ff-th">Thao tác</th>
               </tr>
@@ -243,9 +380,10 @@ const RestaurantDashboard = () => {
               {orders.map(o => (
                 <tr key={o.id} className="ff-tr">
                   <td className="ff-td">{o.id}</td>
-                  <td className="ff-td">{o.User?.name || o.customerName || o.name || o.userId}</td>
+                  <td className="ff-td">{o.User?.name || o.User?.username || o.customerName || `User #${o.userId}`}</td>
                   <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
-                  <td className="ff-td">{o.status}</td>
+                  <td className="ff-td">{formatDateTime(o.updatedAt)}</td>
+                  <td className="ff-td"><StatusBadge status={o.status} /></td>
                   <td className="ff-td">
                     {o.droneId && o.Drone?.name && (
                       <span style={{marginRight:8,color:'#189c38',fontWeight:500}}>Drone: {o.Drone.name} (#{o.droneId})</span>
@@ -268,6 +406,7 @@ const RestaurantDashboard = () => {
                 <th className="ff-th">Mã đơn</th>
                 <th className="ff-th">Khách hàng</th>
                 <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Hoàn thành lúc</th>
                 <th className="ff-th">Trạng thái</th>
                 <th className="ff-th"></th>
               </tr>
@@ -276,9 +415,10 @@ const RestaurantDashboard = () => {
               {history.map(o => (
                 <tr key={o.id} className="ff-tr">
                   <td className="ff-td">{o.id}</td>
-                  <td className="ff-td">{o.User?.name || o.customerName || o.name || o.userId}</td>
+                  <td className="ff-td">{o.User?.name || o.User?.username || o.customerName || `User #${o.userId}`}</td>
                   <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
-                  <td className="ff-td">{o.status}</td>
+                  <td className="ff-td">{formatDateTime(o.updatedAt)}</td>
+                  <td className="ff-td"><StatusBadge status={o.status} /></td>
                   <td className="ff-td">
                     <button onClick={()=>setSelectedOrder(o)} className="ff-btn ff-btn--primary ff-btn--small">Xem chi tiết</button>
                   </td>
@@ -340,34 +480,56 @@ const RestaurantDashboard = () => {
       {/* Modal xem chi tiết đơn */}
       <Modal open={!!selectedOrder} title={selectedOrder ? `Chi tiết đơn #${selectedOrder.id}` : ''} onClose={()=>setSelectedOrder(null)} footer={null}>
         {selectedOrder && (
-          <div>
-            <div><b>Khách hàng:</b> {selectedOrder.User?.name || selectedOrder.customerName || selectedOrder.name || selectedOrder.userId}</div>
-            <div><b>Địa chỉ:</b> {selectedOrder.address}</div>
-            <div><b>Tổng tiền:</b> {Number(selectedOrder.total).toLocaleString()}₫</div>
-            <div><b>Trạng thái:</b> <span className={`ff-badge ${selectedOrder.status==='Done' ? 'ff-badge--ok' : 'ff-badge--warn'}`}>{selectedOrder.status}</span></div>
-            <div><b>Drone:</b> {selectedOrder.droneId ? `#${selectedOrder.droneId}` : 'Chưa gán'}</div>
-            <div style={{margin:'16px 0'}}>
+          <div style={{maxWidth: '100%', overflow: 'hidden'}}>
+            <div style={{marginBottom: 8}}><b>Khách hàng:</b> {selectedOrder.User?.name || selectedOrder.User?.username || selectedOrder.customerName || `User #${selectedOrder.userId}`}</div>
+            <div style={{marginBottom: 8}}><b>Địa chỉ:</b> {selectedOrder.address}</div>
+            <div style={{marginBottom: 8}}><b>Tổng tiền:</b> {Number(selectedOrder.total).toLocaleString()}₫</div>
+            <div style={{marginBottom: 8}}><b>Trạng thái:</b> <StatusBadge status={selectedOrder.status} /></div>
+            <div style={{marginBottom: 16}}><b>Drone:</b> {selectedOrder.droneId ? `#${selectedOrder.droneId}` : 'Chưa gán'}</div>
+            
+            <div style={{marginBottom: 16}}>
               <b>Danh sách món:</b>
-              <table className="ff-table ff-table--wide" style={{marginTop:8}}>
-                <thead className="ff-thead">
-                  <tr>
-                    <th className="ff-th">Tên món</th>
-                    <th className="ff-th">Số lượng</th>
-                    <th className="ff-th">Đơn giá</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(selectedOrder.OrderDetails || []).map(od => (
-                    <tr key={od.id} className="ff-tr">
-                      <td className="ff-td">{od.Menu?.name || od.menuId}</td>
-                      <td className="ff-td">{od.quantity}</td>
-                      <td className="ff-td">{Number(od.price).toLocaleString()}₫</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-            <div className="ff-actions">
+            <div style={{maxHeight: 400, overflowY: 'auto', width: '100%'}}>
+              {(selectedOrder.OrderDetails || []).length === 0 ? (
+                <div style={{textAlign: 'center', color: '#888', padding: 16}}>Không có món ăn nào</div>
+              ) : (
+                <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                  {(selectedOrder.OrderDetails || []).map(od => (
+                    <div key={od.id} style={{
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 12, 
+                      padding: 12, 
+                      background: '#f5f5f5', 
+                      borderRadius: 8,
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}>
+                      {od.Menu?.imageUrl && (
+                        <img 
+                          src={od.Menu.imageUrl} 
+                          alt={od.Menu?.name} 
+                          style={{width: 50, height: 50, minWidth: 50, objectFit: 'cover', borderRadius: 6, flexShrink: 0}} 
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      )}
+                      <div style={{flex: 1, minWidth: 0, overflow: 'hidden'}}>
+                        <div style={{fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                          {od.Menu?.name || `Món #${od.menuId}`}
+                        </div>
+                        <div style={{fontSize: 14, color: '#666'}}>Số lượng: {od.quantity}</div>
+                      </div>
+                      <div style={{fontWeight: 'bold', color: '#ff4d4f', fontSize: 16, flexShrink: 0, whiteSpace: 'nowrap'}}>
+                        {Number(od.price * od.quantity).toLocaleString()}₫
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="ff-actions" style={{marginTop: 16}}>
               <button className="ff-btn ff-btn--danger" onClick={()=>setSelectedOrder(null)}>Đóng</button>
             </div>
           </div>

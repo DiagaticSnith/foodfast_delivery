@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { orderAPI } from '../api/api';
-import axios from 'axios';
+import { orderAPI, api } from '../api/api';
+import StatusBadge from '../components/StatusBadge';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -28,8 +28,13 @@ const OrderHistory = () => {
 
 	const fetchDetails = async (orderId) => {
 		if (details[orderId]) return;
-		const res = await axios.get(`/api/order-details/${orderId}`);
-		setDetails(prev => ({ ...prev, [orderId]: res.data }));
+		try {
+			const res = await api.get(`/api/order-details/${orderId}`);
+			setDetails(prev => ({ ...prev, [orderId]: res.data }));
+		} catch (error) {
+			console.error('Error fetching order details:', error);
+			setDetails(prev => ({ ...prev, [orderId]: [] }));
+		}
 	};
 
 	return (
@@ -40,19 +45,7 @@ const OrderHistory = () => {
 				<div key={order.id} style={{ borderBottom: '1px solid #eee', marginBottom: 16, paddingBottom: 16 }}>
 					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 						<div>
-											<b>Đơn #{order.id}</b> - 
-											<span style={{
-												display: 'inline-block',
-												marginLeft: 8,
-												padding: '2px 16px',
-												borderRadius: 16,
-												color: '#fff',
-												background: order.status === 'Paid' ? '#28a745' : '#ff4d4f',
-												fontWeight: 600,
-												fontSize: 16
-											}}>
-												{order.status === 'Paid' ? 'Đã thanh toán' : order.status === 'Unpaid' ? 'Chưa thanh toán' : order.status}
-											</span>
+											<b>Đơn #{order.id}</b> - <span style={{marginLeft:8}}><StatusBadge status={order.status} /></span>
 											<br />
 							<span style={{ color: '#888' }}>Tổng tiền: {order.total.toLocaleString()}₫</span><br />
 							<span style={{ color: '#888' }}>Địa chỉ: {order.address}</span>
@@ -65,21 +58,43 @@ const OrderHistory = () => {
 							{expanded === order.id ? 'Ẩn chi tiết' : 'Xem chi tiết'}
 						</button>
 					</div>
-								{expanded === order.id && Array.isArray(details[order.id]) && (
-									<div style={{ marginTop: 16, background: '#fafafa', borderRadius: 8, padding: 16 }}>
+								{expanded === order.id && Array.isArray(details[order.id]) && details[order.id].length > 0 && (
+									<div style={{ marginTop: 16, background: '#fafafa', borderRadius: 8, padding: 16, width: '100%', boxSizing: 'border-box' }}>
 										<b>Chi tiết đơn hàng:</b>
-										<ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+										<ul style={{ margin: '12px 0 0 0', padding: 0, listStyle: 'none' }}>
 											{details[order.id].map(item => (
-												<li key={item.id} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 16 }}>
-													<img src={item.Menu?.imageUrl} alt={item.Menu?.name} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
-													<span>{item.Menu?.name}</span> x <b>{item.quantity}</b> - <span style={{ color: '#ff4d4f' }}>{item.price.toLocaleString()}₫</span>
+												<li key={item.id} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: '#fff', borderRadius: 8, width: '100%', boxSizing: 'border-box' }}>
+													{item.Menu?.imageUrl ? (
+														<img 
+															src={item.Menu.imageUrl} 
+															alt={item.Menu?.name || 'Món ăn'} 
+															style={{ width: 60, height: 60, minWidth: 60, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} 
+															onError={(e) => { e.target.style.display = 'none'; }}
+														/>
+													) : (
+														<div style={{ width: 60, height: 60, minWidth: 60, background: '#ddd', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🍽️</div>
+													)}
+													<div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+														<div style={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.Menu?.name || 'Món ăn'}</div>
+														<div style={{ fontSize: 14, color: '#888' }}>Số lượng: {item.quantity}</div>
+													</div>
+													<div style={{ fontWeight: 'bold', color: '#ff4d4f', fontSize: 16, flexShrink: 0, whiteSpace: 'nowrap' }}>
+														{(item.price * item.quantity).toLocaleString()}₫
+													</div>
 												</li>
 											))}
 										</ul>
 									</div>
 								)}
-								{expanded === order.id && !Array.isArray(details[order.id]) && (
-									<div style={{ color: 'red', marginTop: 16 }}>Không có dữ liệu chi tiết đơn hàng.</div>
+								{expanded === order.id && Array.isArray(details[order.id]) && details[order.id].length === 0 && (
+									<div style={{ color: '#888', marginTop: 16, padding: 16, background: '#fafafa', borderRadius: 8, textAlign: 'center' }}>
+										Không có món ăn nào trong đơn hàng này.
+									</div>
+								)}
+								{expanded === order.id && !details[order.id] && (
+									<div style={{ color: '#888', marginTop: 16, padding: 16, background: '#fafafa', borderRadius: 8, textAlign: 'center' }}>
+										Đang tải chi tiết đơn hàng...
+									</div>
 								)}
 				</div>
 			))}
