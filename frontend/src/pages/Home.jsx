@@ -1,70 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { menuAPI } from '../api/api';
+import { useNavigate } from 'react-router-dom';
+import { menuAPI, api } from '../api/api';
 import MenuItem from '../components/MenuItem';
-
+import RestaurantCard from '../components/RestaurantCard';
 
 const Home = () => {
-	const [menus, setMenus] = useState([]);
-	const [search, setSearch] = useState('');
-	const [sort, setSort] = useState('default'); // 'asc' | 'desc' | 'default'
-	const [page, setPage] = useState(1);
-	const pageSize = 12;
+		const navigate = useNavigate();
+		const [restaurants, setRestaurants] = useState([]);
+		const [menus, setMenus] = useState([]);
 
 	useEffect(() => {
-		const fetchMenus = async () => {
-			let res;
-			if (search && search.trim() !== '') {
-				res = await menuAPI.getMenus({ search });
-			} else {
-				res = await menuAPI.getMenus();
+		const load = async () => {
+			try {
+				const [restRes, menuRes] = await Promise.all([
+					api.get('/api/restaurants'),
+					menuAPI.getMenus(),
+				]);
+				setRestaurants(restRes.data || []);
+				setMenus(menuRes.data || []);
+			} catch (e) {
+				console.error('Lỗi tải dữ liệu trang chủ:', e);
 			}
-			setMenus(res.data);
 		};
-		fetchMenus();
-	}, [search]);
+		load();
+	}, []);
 
-	// Sort menus by price
-	const sortedMenus = React.useMemo(() => {
-		if (sort === 'asc') {
-			return [...menus].sort((a, b) => a.price - b.price);
-		} else if (sort === 'desc') {
-			return [...menus].sort((a, b) => b.price - a.price);
-		}
-		return menus;
-	}, [menus, sort]);
-
-	// Pagination
-	const totalPages = Math.ceil(sortedMenus.length / pageSize) || 1;
-	const pagedMenus = sortedMenus.slice((page-1)*pageSize, page*pageSize);
+		const restaurantsToShow = restaurants.slice(0, 4);
+		const menusToShow = menus.slice(0, 8);
 
 	return (
-		<div>
-			<h2 style={{textAlign: 'center', color: '#ff4d4f', margin: '32px 0 16px'}}>Khám phá thực đơn Fastfood</h2>
-			<div style={{textAlign: 'center', marginBottom: 24, display:'flex', justifyContent:'center', gap:16}}>
-				<input
-					type="text"
-					placeholder="Tìm món ăn, combo, nhà hàng..."
-					style={{padding: '8px 16px', borderRadius: 6, border: '1px solid #ddd', width: 320}}
-					onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-				/>
-				<select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} style={{padding:'8px 16px', borderRadius:6, border:'1px solid #ddd', fontSize:16}}>
-					<option value="default">Sắp xếp theo mặc định</option>
-					<option value="asc">Giá tăng dần</option>
-					<option value="desc">Giá giảm dần</option>
-				</select>
-			</div>
-			<div className="menu-list">
-				{pagedMenus.map(menu => <MenuItem key={menu.id} item={menu} />)}
-			</div>
-			{totalPages > 1 && (
-				<div style={{display:'flex',justifyContent:'center',gap:8,margin:'32px 0'}}>
-					<button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{padding:'8px 18px',borderRadius:6,border:'1px solid #eee',background:'#fff',color:'#333',fontWeight:600,cursor:page===1?'not-allowed':'pointer'}}>Trước</button>
-					{Array.from({length:totalPages},(_,i)=>(
-						<button key={i} onClick={()=>setPage(i+1)} style={{padding:'8px 14px',borderRadius:6,border:'none',background:page===i+1?'#ff4d4f':'#eee',color:page===i+1?'#fff':'#333',fontWeight:600,cursor:'pointer'}}>{i+1}</button>
-					))}
-					<button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{padding:'8px 18px',borderRadius:6,border:'1px solid #eee',background:'#fff',color:'#333',fontWeight:600,cursor:page===totalPages?'not-allowed':'pointer'}}>Sau</button>
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px' }}>
+			{/* Restaurants section */}
+			<div style={{ marginTop: 16, marginBottom: 32 }}>
+				<div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+					<h2 style={{ margin: '8px 0', color: '#ff4d4f' }}>🍽️ Nhà hàng nổi bật</h2>
+											<button
+												onClick={() => navigate('/restaurants')}
+												style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontWeight: 600 }}
+											>
+												Xem tất cả nhà hàng
+											</button>
 				</div>
-			)}
+				{restaurants.length === 0 ? (
+					<div style={{ color: '#888' }}>Chưa có nhà hàng nào.</div>
+				) : (
+					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+						{restaurantsToShow.map(r => (
+							<div key={r.id} style={{ background: '#fff', borderRadius: 10, boxShadow: '0 2px 8px #eee', overflow: 'hidden' }}>
+								<RestaurantCard restaurant={r} />
+							</div>
+						))}
+					</div>
+				)}
+								{/* Removed duplicate center button for restaurants to avoid confusion */}
+			</div>
+
+			{/* Menus section */}
+			<div style={{ marginTop: 16, marginBottom: 16 }}>
+				<div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+					<h2 style={{ margin: '8px 0', color: '#ff4d4f' }}>🥡 Món ngon hôm nay</h2>
+											<button
+												onClick={() => navigate('/menus')}
+												style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontWeight: 600 }}
+											>
+												Xem tất cả món
+											</button>
+				</div>
+
+				{menus.length === 0 ? (
+					<div style={{ color: '#888' }}>Chưa có món ăn nào.</div>
+				) : (
+					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+						{menusToShow.map(menu => (
+							<MenuItem key={menu.id} item={menu} />
+						))}
+					</div>
+				)}
+
+								{/* Removed duplicate center button for menus to avoid confusion */}
+			</div>
 		</div>
 	);
 };

@@ -34,6 +34,7 @@ const AdminDashboard = () => {
         <button onClick={()=>changeTab('order')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='order'?'#ff4d4f':'#eee',color:tab==='order'?'#fff':'#333',fontWeight:600,fontSize:16}}>📦 Đơn hàng</button>
         <button onClick={()=>changeTab('business')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='business'?'#ff4d4f':'#eee',color:tab==='business'?'#fff':'#333',fontWeight:600,fontSize:16}}>🤝 Đối tác</button>
         <button onClick={()=>changeTab('user')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='user'?'#ff4d4f':'#eee',color:tab==='user'?'#fff':'#333',fontWeight:600,fontSize:16}}>👥 Người dùng</button>
+        <a href="/drone-monitoring" style={{padding:'10px 24px',borderRadius:8,border:'none',background:'#1890ff',color:'#fff',fontWeight:600,fontSize:16,textDecoration:'none'}}>🗺️ Bản đồ drone</a>
       </div>
       {tab === 'restaurant' && <RestaurantAdmin />}
       {tab === 'drone' && <DroneAdmin />}

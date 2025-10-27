@@ -63,12 +63,27 @@ const User = require('../models/User');
 
 exports.register = async (req, res) => {
   try {
-    const { username, password, email, name, role } = req.body;
+    let { username, password, email, name } = req.body;
+    // Basic validation
+    if (!username || !password || !email) {
+      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ username, email và password' });
+    }
+    username = String(username).trim();
+    email = String(email).trim().toLowerCase();
+    name = name ? String(name).trim() : null;
+
+    // Check duplicates early for clear error messages
+    const existed = await User.findOne({ where: { username } });
+    if (existed) return res.status(400).json({ message: 'Tên đăng nhập đã được sử dụng' });
+    const existedEmail = await User.findOne({ where: { email } });
+    if (existedEmail) return res.status(400).json({ message: 'Email đã được sử dụng' });
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, password: hashedPassword, email, name: name || null, role });
-    res.status(201).json(user);
+    const user = await User.create({ username, password: hashedPassword, email, name, role: 'user' });
+    res.status(201).json({ id: user.id, username: user.username, name: user.name, email: user.email, role: user.role });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    const msg = err?.name === 'SequelizeUniqueConstraintError' ? 'Tài khoản đã tồn tại' : (err?.message || 'Đăng ký thất bại');
+    res.status(400).json({ message: msg });
   }
 };
 

@@ -1,15 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api/api';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
 import { useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import '../styles/admin.css';
+import { DroneSimulator, generateRoute, SAMPLE_LOCATIONS } from '../utils/droneSimulator';
 
 const RestaurantDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState(searchParams.get('tab') || 'menu');
+  // Store info state
+  const [store, setStore] = useState(null);
+  const [storeLoading, setStoreLoading] = useState(false);
+  const [storeForm, setStoreForm] = useState({ name: '', address: '', description: '', imageUrl: '', promotion: '' });
+  const [uploadingStoreImage, setUploadingStoreImage] = useState(false);
 
   // Menus state (with pagination + modal create/edit)
   const [menus, setMenus] = useState([]);
@@ -23,9 +29,13 @@ const RestaurantDashboard = () => {
 
   // Orders state
   const [orders, setOrders] = useState([]);
+  const [deliveringOrders, setDeliveringOrders] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [history, setHistory] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  // Sim and progress for delivering orders
+  const deliveringSimsRef = useRef({}); // { [orderId]: DroneSimulator }
+  const [deliverProgress, setDeliverProgress] = useState({}); // { [orderId]: number 0..1 }
   
   // Revenue stats
   const [revenueData, setRevenueData] = useState([]);
@@ -61,11 +71,24 @@ const RestaurantDashboard = () => {
   // Fetch menu, orders, history
   useEffect(() => {
     if (user?.role === 'restaurant') {
+      fetchStore();
       fetchMenus();
       fetchOrders();
     }
     // eslint-disable-next-line
   }, []);
+
+  const fetchStore = async () => {
+    try {
+      setStoreLoading(true);
+      const res = await api.get(`/api/restaurants?userId=${user.id}&includeHidden=true`);
+      const r = (res.data || [])[0] || null;
+      setStore(r);
+      if (r) setStoreForm({ name: r.name || '', address: r.address || '', description: r.description || '', imageUrl: r.imageUrl || '', promotion: r.promotion || '' });
+    } finally {
+      setStoreLoading(false);
+    }
+  };
 
   const fetchMenus = async () => {
     try {
@@ -81,8 +104,9 @@ const RestaurantDashboard = () => {
       const allOrders = res.data;
       console.log('Orders từ API:', allOrders);
       console.log('Order đầu tiên:', allOrders[0]);
-      setPendingOrders(allOrders.filter(o => o.status === 'Pending'));
-      setOrders(allOrders.filter(o => o.status === 'Accepted'));
+  setPendingOrders(allOrders.filter(o => o.status === 'Pending'));
+  setOrders(allOrders.filter(o => o.status === 'Accepted'));
+  setDeliveringOrders(allOrders.filter(o => o.status === 'Delivering'));
       const doneOrders = allOrders.filter(o => o.status === 'Done');
       setHistory(doneOrders);
       
@@ -92,9 +116,63 @@ const RestaurantDashboard = () => {
       console.error('Lỗi fetchOrders:', err);
       setPendingOrders([]);
       setOrders([]);
+      setDeliveringOrders([]);
       setHistory([]);
     }
   };
+
+  // Auto-start simulations for Delivering orders and update progress
+  useEffect(() => {
+    const sims = deliveringSimsRef.current;
+    // start sims for new delivering orders
+    deliveringOrders.forEach(o => {
+      if (sims[o.id]) return;
+      const restaurant = SAMPLE_LOCATIONS.restaurant1;
+      const customerLocations = [SAMPLE_LOCATIONS.customer1, SAMPLE_LOCATIONS.customer2, SAMPLE_LOCATIONS.customer3];
+      const idx = o.id % customerLocations.length;
+      const customer = customerLocations[idx];
+      const route = generateRoute(restaurant, customer, 40);
+
+  // Use time-based mode so progress persists across refreshes and other views
+  const startMs = new Date(o.updatedAt || Date.now()).getTime();
+  const durationMs = 120000; // 2 minutes demo flight
+  const sim = new DroneSimulator(o.droneId || o.id, route, { mode: 'time', startTimeMs: startMs, durationMs, tickHz: 30 });
+      let completed = false;
+      sim.onUpdate(update => {
+        setDeliverProgress(prev => ({ ...prev, [o.id]: update.progress }));
+        if ((update.completed || update.progress >= 0.99) && !completed) {
+          completed = true;
+          api.put(`/api/orders/${o.id}`, { status: 'Done' })
+            .then(() => {
+              // cleanup progress and refresh lists
+              setDeliverProgress(prev => { const cp = { ...prev }; delete cp[o.id]; return cp; });
+              fetchOrders();
+            })
+            .catch(err => console.error('Update Done error:', err));
+        }
+      });
+      sim.start();
+      sims[o.id] = sim;
+    });
+
+    // stop sims that are no longer delivering
+    Object.entries(sims).forEach(([orderId, sim]) => {
+      if (!deliveringOrders.find(o => o.id === Number(orderId))) {
+        sim.stop();
+        delete sims[orderId];
+        setDeliverProgress(prev => { const cp = { ...prev }; delete cp[orderId]; return cp; });
+      }
+    });
+
+    return () => {};
+  }, [deliveringOrders]);
+
+  // Cleanup on unmount
+  useEffect(() => () => {
+    const sims = deliveringSimsRef.current;
+    Object.values(sims).forEach(sim => sim.stop());
+    deliveringSimsRef.current = {};
+  }, []);
 
   const calculateRevenue = (doneOrders) => {
     // Group orders by date (day precision)
@@ -157,11 +235,11 @@ const RestaurantDashboard = () => {
     fetchOrders();
     alert('Đã nhận đơn, drone đang di chuyển tới nhà hàng!');
   };
-  // Hoàn thành đơn
-  const handleCompleteOrder = async (orderId) => {
-    await api.put(`/api/orders/${orderId}`, { status: 'Done' });
+  // Gửi đơn (chuyển sang Đang giao)
+  const handleSendOrder = async (orderId) => {
+    await api.put(`/api/orders/${orderId}`, { status: 'Delivering' });
     fetchOrders();
-    alert('Đã hoàn thành đơn!');
+    alert('Đơn đang giao tới khách hàng!');
   };
 
   // Change tab and update URL
@@ -176,8 +254,10 @@ const RestaurantDashboard = () => {
         <button onClick={()=>changeTab('revenue')} className={`ff-btn ${tab==='revenue' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>📊 Doanh thu</button>
         <button onClick={()=>changeTab('menu')} className={`ff-btn ${tab==='menu' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Quản lý Menu</button>
         <button onClick={()=>changeTab('pending')} className={`ff-btn ${tab==='pending' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn chờ nhận</button>
-        <button onClick={()=>changeTab('accepted')} className={`ff-btn ${tab==='accepted' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đã nhận</button>
+  <button onClick={()=>changeTab('accepted')} className={`ff-btn ${tab==='accepted' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đã nhận</button>
+  <button onClick={()=>changeTab('delivering')} className={`ff-btn ${tab==='delivering' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đang giao</button>
         <button onClick={()=>changeTab('history')} className={`ff-btn ${tab==='history' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Lịch sử đơn đã giao</button>
+        <button onClick={()=>changeTab('store')} className={`ff-btn ${tab==='store' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>🏪 Thông tin cửa hàng</button>
       </div>
 
       {tab==='revenue' && (
@@ -388,7 +468,52 @@ const RestaurantDashboard = () => {
                     {o.droneId && o.Drone?.name && (
                       <span style={{marginRight:8,color:'#189c38',fontWeight:500}}>Drone: {o.Drone.name} (#{o.droneId})</span>
                     )}
-                    <button onClick={()=>handleCompleteOrder(o.id)} className="ff-btn ff-btn--warning ff-btn--small" disabled={!o.droneId} style={{opacity:o.droneId?1:0.5, marginRight:6}}>Đã hoàn thành</button>
+                    <button onClick={()=>handleSendOrder(o.id)} className="ff-btn ff-btn--warning ff-btn--small" disabled={!o.droneId} style={{opacity:o.droneId?1:0.5, marginRight:6}}>Gửi đơn</button>
+                    <button onClick={()=>setSelectedOrder(o)} className="ff-btn ff-btn--primary ff-btn--small">Xem chi tiết</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {tab==='delivering' && (
+        <div>
+          <h4>Đơn đang giao</h4>
+          <table className="ff-table ff-table--wide">
+            <thead className="ff-thead">
+              <tr>
+                <th className="ff-th">Mã đơn</th>
+                <th className="ff-th">Khách hàng</th>
+                <th className="ff-th">Tổng tiền</th>
+                <th className="ff-th">Tiến độ</th>
+                <th className="ff-th">Cập nhật lúc</th>
+                <th className="ff-th">Trạng thái</th>
+                <th className="ff-th">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {deliveringOrders.map(o => (
+                <tr key={o.id} className="ff-tr">
+                  <td className="ff-td">{o.id}</td>
+                  <td className="ff-td">{o.User?.name || o.User?.username || o.customerName || `User #${o.userId}`}</td>
+                  <td className="ff-td">{Number(o.total).toLocaleString()}₫</td>
+                  <td className="ff-td" style={{minWidth:200}}>
+                    {(() => { const p = Math.round((deliverProgress[o.id] || 0) * 100); return (
+                      <div>
+                        <div style={{background:'#eee', borderRadius:8, overflow:'hidden'}}>
+                          <div style={{height:10, width: `${p}%`, background: '#52c41a', transition: 'width 0.3s'}} />
+                        </div>
+                        <div style={{fontSize:12, color:'#666', marginTop:6}}>{p}%</div>
+                      </div>
+                    ); })()}
+                  </td>
+                  <td className="ff-td">{formatDateTime(o.updatedAt)}</td>
+                  <td className="ff-td"><StatusBadge status={o.status} /></td>
+                  <td className="ff-td">
+                    {o.droneId && o.Drone?.name && (
+                      <span style={{marginRight:8,color:'#189c38',fontWeight:500}}>Drone: {o.Drone.name} (#{o.droneId})</span>
+                    )}
                     <button onClick={()=>setSelectedOrder(o)} className="ff-btn ff-btn--primary ff-btn--small">Xem chi tiết</button>
                   </td>
                 </tr>
@@ -426,6 +551,60 @@ const RestaurantDashboard = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {tab==='store' && (
+        <div>
+          <h4>🏪 Thông tin cửa hàng</h4>
+          {storeLoading ? (
+            <div className="ff-muted">Đang tải...</div>
+          ) : !store ? (
+            <div className="ff-alert--warn">Chưa tìm thấy cửa hàng của bạn. Hãy liên hệ quản trị viên để được cấp quyền hoặc tạo cửa hàng.</div>
+          ) : (
+            <form className="ff-form" onSubmit={async (e)=>{
+              e.preventDefault();
+              const body = { name: storeForm.name, address: storeForm.address, description: storeForm.description, imageUrl: storeForm.imageUrl, promotion: storeForm.promotion };
+              await api.put(`/api/restaurants/${store.id}`, body);
+              await fetchStore();
+              alert('Đã cập nhật thông tin cửa hàng');
+            }}>
+              <div className="ff-row">
+                <input className="ff-input" value={storeForm.name} onChange={(e)=>setStoreForm(f=>({...f, name: e.target.value}))} placeholder="Tên cửa hàng" required />
+              </div>
+              <div className="ff-row">
+                <input className="ff-input" value={storeForm.address} onChange={(e)=>setStoreForm(f=>({...f, address: e.target.value}))} placeholder="Địa chỉ" required />
+              </div>
+              <div className="ff-row">
+                <input className="ff-input" value={storeForm.promotion} onChange={(e)=>setStoreForm(f=>({...f, promotion: e.target.value}))} placeholder="Khuyến mãi (tuỳ chọn)" />
+              </div>
+              <div className="ff-row">
+                <input className="ff-input" value={storeForm.imageUrl} onChange={(e)=>setStoreForm(f=>({...f, imageUrl: e.target.value}))} placeholder="Ảnh cửa hàng (URL)" />
+                <input type="file" accept="image/*" onChange={async (e)=>{
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingStoreImage(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append('image', file);
+                    const res = await api.post(`/api/upload?folder=restaurants`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    setStoreForm(f=>({...f, imageUrl: res.data.url }));
+                  } finally { setUploadingStoreImage(false); }
+                }} />
+                {uploadingStoreImage && <span className="ff-muted">Đang tải ảnh...</span>}
+              </div>
+              {storeForm.imageUrl && (
+                <div className="ff-row ff-align-center">
+                  <img src={storeForm.imageUrl} alt="preview-store" className="ff-img--preview" onError={(e)=>{e.currentTarget.style.display='none';}} />
+                  <span className="ff-muted">Preview</span>
+                </div>
+              )}
+              <textarea className="ff-textarea" rows={4} placeholder="Mô tả" value={storeForm.description} onChange={(e)=>setStoreForm(f=>({...f, description: e.target.value}))} />
+              <div className="ff-actions">
+                <button type="submit" className="ff-btn ff-btn--success">Lưu thay đổi</button>
+              </div>
+            </form>
+          )}
         </div>
       )}
       {/* Modal thêm/sửa món */}

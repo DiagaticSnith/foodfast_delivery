@@ -3,8 +3,9 @@ const { Restaurant, Menu } = require('../models');
 module.exports = {
   async getAll(req, res) {
     try {
-  const { includeHidden, status } = req.query;
-  const where = status ? { status } : (includeHidden ? {} : { status: 'active' });
+  const { includeHidden, status, userId } = req.query;
+  const baseWhere = status ? { status } : (includeHidden ? {} : { status: 'active' });
+  const where = userId ? { ...baseWhere, userId: Number(userId) } : baseWhere;
   const menuWhere = status ? { status } : (includeHidden ? undefined : { status: 'active' });
   const restaurants = await Restaurant.findAll({ where, include: { model: Menu, where: menuWhere, required: false } });
       res.json(restaurants);

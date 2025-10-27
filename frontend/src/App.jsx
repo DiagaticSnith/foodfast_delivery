@@ -15,12 +15,16 @@ import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Restaurants from './pages/Restaurants';
+import Menus from './pages/Menus';
 import AdminDashboard from './pages/AdminDashboard';
 import ShipperDashboard from './pages/ShipperDashboard';
 import UserInfo from './pages/UserInfo';
 import RestaurantDetail from './pages/RestaurantDetail';
 import MenuDetail from './pages/MenuDetail';
 import CheckoutSuccess from './pages/CheckoutSuccess';
+import CheckoutCancel from './pages/CheckoutCancel';
+import DroneMonitoring from './pages/DroneMonitoring';
+import OrderTracking from './pages/OrderTracking';
 
 
 function App() {
@@ -51,10 +55,12 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/checkout/cancel" element={<CheckoutCancel />} />
           <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/login" element={<Login setUser={setUser} />}/>
           <Route path="/register" element={<Register setUser={setUser} />}/>
           <Route path="/restaurants" element={<Restaurants />} />
+          <Route path="/menus" element={<Menus />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/restaurant-dashboard" element={<RestaurantDashboard />} />
@@ -63,6 +69,8 @@ function App() {
           <Route path="/user-info" element={<UserInfo user={user} setUser={setUser} />} />
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
           <Route path="/menu/:id" element={<MenuDetail />} />
+          <Route path="/drone-monitoring" element={<DroneMonitoring />} />
+          <Route path="/order-tracking" element={<OrderTracking />} />
         </Routes>
       </Router>
     </CartProvider>

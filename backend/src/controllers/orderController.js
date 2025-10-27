@@ -54,25 +54,6 @@ async function autoAssignDroneForOrder(orderId) {
     assignedDroneId = drone.id;
   });
 
-  // Sau khi gán thành công: PoC tự động release drone sau 10s và đánh dấu đơn hoàn tất
-  if (assignedDroneId) {
-    setTimeout(async () => {
-      try {
-        const o = await Order.findByPk(orderId);
-        if (o && o.status !== 'Done') {
-          o.status = 'Done';
-          await o.save();
-        }
-        const d = await Drone.findByPk(assignedDroneId);
-        if (d) {
-          d.status = 'available';
-          await d.save();
-        }
-      } catch (e) {
-        console.error('Auto release drone error:', e);
-      }
-    }, 10000);
-  }
 
   return assignedDroneId;
 }
@@ -147,13 +128,27 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    if (!['Pending', 'Accepted', 'Done', 'Rejected'].includes(status)) {
+    if (!['Pending', 'Accepted', 'Delivering', 'Done', 'Rejected'].includes(status)) {
       return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
     }
     const order = await Order.findByPk(id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+    
+    const oldStatus = order.status;
     order.status = status;
     await order.save();
+    
+    // Nếu đơn chuyển sang Done -> giải phóng drone
+    if (status === 'Done' && order.droneId && oldStatus !== 'Done') {
+      const { Drone } = require('../models');
+      const drone = await Drone.findByPk(order.droneId);
+      if (drone && drone.status !== 'available') {
+        drone.status = 'available';
+        await drone.save();
+        console.log(`Drone #${order.droneId} released after completing order #${order.id}`);
+      }
+    }
+    
     // Nếu nhà hàng xác nhận ('Accepted') -> tự động gán drone nếu có sẵn
     if (status === 'Accepted' && !order.droneId) {
       try {
@@ -161,13 +156,17 @@ exports.updateOrderStatus = async (req, res) => {
         if (!droneId) {
           return res.json({ message: 'Đã xác nhận đơn. Hiện chưa có drone trống, hệ thống sẽ thử lại sau.', order });
         }
-        return res.json({ message: `Đã xác nhận và gán drone #${droneId}. Drone sẽ hoàn tất trong ~10s (PoC).`, order: await Order.findByPk(order.id) });
+        return res.json({ message: `Đã xác nhận và gán drone #${droneId} cho đơn hàng.`, order: await Order.findByPk(order.id) });
       } catch (e) {
         if (e && e.code === 'NO_DRONE') {
           return res.json({ message: 'Đã xác nhận đơn. Chưa có drone available.', order });
         }
         return res.status(500).json({ message: 'Lỗi khi tự gán drone', error: e.message });
       }
+    }
+    // Nếu chuyển sang Delivering, chỉ trả về message xác nhận
+    if (status === 'Delivering') {
+      return res.json({ message: 'Đơn đang giao tới khách hàng', order });
     }
     return res.json({ message: 'Cập nhật trạng thái thành công', order });
   } catch (err) {

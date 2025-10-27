@@ -12,7 +12,8 @@ const OrderForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     await orderAPI.createOrder({ userId: 1, total, address, items: cart }); // Mock userId
-    clearCart();
+    // Don't clear cart - let user keep their items after ordering
+    // clearCart();
     navigate('/order-history');
   };
 

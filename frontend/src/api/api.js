@@ -39,7 +39,11 @@ api.interceptors.response.use(
   }
 );
 
-export const userAPI = { register: (data) => api.post('/api/users/register', data), login: (data) => api.post('/api/users/login', data) };
+export const userAPI = {
+  register: (data) => api.post('/api/users/register', data),
+  login: (data) => api.post('/api/users/login', data),
+  updateInfo: (id, body) => api.put(`/api/users/${id}/info`, body),
+};
 export const menuAPI = { getMenus: (params) => api.get('/api/menus', { params }), createMenu: (data) => api.post('/api/menus', data) };
 export const orderAPI = {
   createOrder: (data) => api.post('/api/orders', data),
@@ -57,8 +61,8 @@ export const cartAPI = {
 
 export const paymentAPI = {
   createPaymentIntent: (amount) => api.post('/api/payment/create-payment-intent', { amount }),
-  createStripeSession: (cartItems, address, userId, token) =>
-    api.post('/api/stripe/create-session', { cartItems, address, userId }, {
+  createStripeSession: (cartItems, address, userId, email, token) =>
+    api.post('/api/stripe/create-session', { cartItems, address, userId, email }, {
       headers: { Authorization: `Bearer ${token}` }
     }),
 };

@@ -65,6 +65,30 @@ const CheckoutSuccess = () => {
         ))}
       </ul>
       <div style={{ marginTop: 24, fontWeight: 'bold', fontSize: 20, color: '#ff4d4f' }}>Tổng cộng: {order.total.toLocaleString()}₫</div>
+
+      {/* Actions */}
+      <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {(order.status === 'Delivering' || order.status === 'Accepted') && (
+          <a
+            href={`/order-tracking?orderId=${order.id}`}
+            style={{
+              background: '#1890ff', color: '#fff', border: 'none', borderRadius: 8,
+              padding: '10px 16px', textDecoration: 'none', fontWeight: 600
+            }}
+          >
+            🗺️ Theo dõi đơn
+          </a>
+        )}
+        <a
+          href="/order-history"
+          style={{
+            background: '#f0f0f0', color: '#333', border: 'none', borderRadius: 8,
+            padding: '10px 16px', textDecoration: 'none', fontWeight: 600
+          }}
+        >
+          Lịch sử đơn
+        </a>
+      </div>
     </div>
   );
 };

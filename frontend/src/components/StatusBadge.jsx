@@ -4,6 +4,10 @@ const mapStatus = (raw) => {
   const s = (raw || '').toString().trim();
   const key = s.toLowerCase();
   switch (key) {
+    case 'delivering':
+    case 'intransit':
+    case 'shipping':
+      return { label: 'Đang giao', cls: 'ff-badge--info' };
     case 'done':
     case 'delivered':
       return { label: 'Đã giao', cls: 'ff-badge--ok' };

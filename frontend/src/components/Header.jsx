@@ -20,7 +20,10 @@ const Header = ({ user, setUser }) => {
 						<Link to="/order-history">Lịch sử đơn</Link>
 					</>
 				)}
-						{user ? (
+				{user?.role === 'admin' && (
+					<Link to="/drone-monitoring">🗺️ Giám sát Drone</Link>
+				)}
+				{user ? (
                                                                 <div style={{position:'relative',display:'inline-block',marginLeft:24}}>
                                                                     <button
                                                                         style={{background:'none',border:'none',color:'#ffd666',fontWeight:'bold',fontSize:16,cursor:'pointer',padding:'6px 18px',borderRadius:8}}

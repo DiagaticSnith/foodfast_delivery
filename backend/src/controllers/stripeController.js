@@ -3,7 +3,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 exports.createCheckoutSession = async (req, res) => {
   try {
-    const { cartItems, address, userId } = req.body;
+    const { cartItems, address, userId, email } = req.body;
     // Chuyển cartItems sang line_items cho Stripe
     const line_items = cartItems.map(item => {
       const productData = { name: item.name };
@@ -19,7 +19,8 @@ exports.createCheckoutSession = async (req, res) => {
         quantity: item.quantity,
       };
     });
-    const session = await stripe.checkout.sessions.create({
+    
+    const sessionConfig = {
       payment_method_types: ['card'],
       line_items,
       mode: 'payment',
@@ -29,7 +30,14 @@ exports.createCheckoutSession = async (req, res) => {
         address,
         userId,
       },
-    });
+    };
+    
+    // Pre-fill customer email if provided
+    if (email) {
+      sessionConfig.customer_email = email;
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     res.json({ sessionId: session.id, url: session.url });
   } catch (err) {
     console.error('Stripe error:', err);
