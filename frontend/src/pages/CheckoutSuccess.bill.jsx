@@ -1,13 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import StatusBadge from '../components/StatusBadge';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { api } from '../api/api';
+import '../styles/CheckoutSuccess.css';
 
 const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
   const [order, setOrder] = useState(null);
   const [details, setDetails] = useState([]);
+  const [customerName, setCustomerName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,51 +45,123 @@ const CheckoutSuccess = () => {
     return () => { cancelled = true; };
   }, [searchParams]);
 
-  if (loading) return <div>Đang xử lý đơn hàng...</div>;
-  if (error) return <div style={{ color: 'red' }}>Lỗi: {error}</div>;
-  if (!order) return null;
-  return (
-    <div style={{ maxWidth: 600, margin: '40px auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee', padding: 32 }}>
-      <h2 style={{ color: '#ff4d4f', marginBottom: 24 }}>Hóa đơn thanh toán</h2>
-      <div style={{ marginBottom: 16 }}><b>Mã đơn hàng:</b> #{order.id}</div>
-  <div style={{ marginBottom: 16 }}><b>Khách hàng:</b> {order.name || order.userId}</div>
-      <div style={{ marginBottom: 16 }}><b>Địa chỉ:</b> {order.address}</div>
-      <div style={{ marginBottom: 16 }}>
-        <b>Trạng thái:</b> <span style={{ marginLeft: 8 }}><StatusBadge status={order.status} /></span>
-      </div>
-      <div style={{ marginBottom: 16 }}><b>Chi tiết đơn hàng:</b></div>
-      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-        {details.map(item => (
-          <li key={item.id} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 16 }}>
-            <img src={item.Menu?.imageUrl} alt={item.Menu?.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />
-            <span>{item.Menu?.name}</span> x <b>{item.quantity}</b> - <span style={{ color: '#ff4d4f' }}>{item.price.toLocaleString()}₫</span>
-          </li>
-        ))}
-      </ul>
-      <div style={{ marginTop: 24, fontWeight: 'bold', fontSize: 20, color: '#ff4d4f' }}>Tổng cộng: {order.total.toLocaleString()}₫</div>
+  useEffect(() => {
+    if (!order) return;
+    // Prefer name from the order if present
+    if (order.name) {
+      setCustomerName(order.name);
+      return;
+    }
+    // If order has userId, try to fetch user to show readable name
+    if (order.userId) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await api.get(`/api/users/${order.userId}`);
+          if (cancelled) return;
+          const user = res.data || {};
+          setCustomerName(user.name || user.username || `#${order.userId}`);
+        } catch (err) {
+          if (cancelled) return;
+          setCustomerName(`#${order.userId}`);
+        }
+      })();
+      return () => { cancelled = true; };
+    }
+  }, [order]);
 
-      {/* Actions */}
-      <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        {(order.status === 'Delivering' || order.status === 'Accepted') && (
-          <a
-            href={`/order-tracking?orderId=${order.id}`}
-            style={{
-              background: '#1890ff', color: '#fff', border: 'none', borderRadius: 8,
-              padding: '10px 16px', textDecoration: 'none', fontWeight: 600
-            }}
-          >
-            🗺️ Theo dõi đơn
+  if (loading) return (
+    <div className="site-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
+      <div className="loading-spinner">🔄</div>
+      <p>Đang xử lý đơn hàng...</p>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="site-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
+      <div style={{ color: '#ff4d4f', fontSize: '48px', marginBottom: '16px' }}>❌</div>
+      <h2 style={{ color: '#ff4d4f', marginBottom: '16px' }}>Có lỗi xảy ra</h2>
+      <p>{error}</p>
+      <a href="/" className="btn btn-primary" style={{ marginTop: '20px' }}>Về trang chủ</a>
+    </div>
+  );
+  
+  if (!order) return null;
+  
+  return (
+    <div className="site-container">
+      <div className="success-container">
+        {/* Success Header */}
+        <div className="success-header">
+          <div className="success-icon">✅</div>
+          <h1 className="success-title">Đặt hàng thành công!</h1>
+          <p className="success-subtitle">Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đang được xử lý.</p>
+        </div>
+
+        {/* Order Details Card */}
+        <div className="order-card">
+          <div className="order-header">
+            <h2>📋 Chi tiết đơn hàng</h2>
+            <div className="order-id">#{order.id}</div>
+          </div>
+          
+          <div className="order-info">
+            <div className="info-row">
+              <span className="info-label">👤 Khách hàng:</span>
+              <span className="info-value">{customerName || (order.userId ? `#${order.userId}` : '')}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">📍 Địa chỉ:</span>
+              <span className="info-value">{order.address}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">📊 Trạng thái:</span>
+              <StatusBadge status={order.status} />
+            </div>
+          </div>
+
+          <div className="order-items">
+            <h3>🍽️ Món đã đặt</h3>
+            <div className="items-list">
+              {details.map(item => (
+                <div key={item.id} className="order-item">
+                  <img 
+                    src={item.Menu?.imageUrl} 
+                    alt={item.Menu?.name} 
+                    className="item-image"
+                  />
+                  <div className="item-details">
+                    <div className="item-name">{item.Menu?.name}</div>
+                    <div className="item-quantity">Số lượng: {item.quantity}</div>
+                  </div>
+                  <div className="item-price">{item.price.toLocaleString()}₫</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="order-total">
+            <div className="total-row">
+              <span>Tổng cộng:</span>
+              <span className="total-amount">{order.total.toLocaleString()}₫</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="action-buttons">
+          {(order.status === 'Delivering' || order.status === 'Accepted') && (
+            <a href={`/order-tracking?orderId=${order.id}`} className="btn btn-primary">
+              🗺️ Theo dõi đơn hàng
+            </a>
+          )}
+          <a href="/order-history" className="btn btn-outline">
+            📄 Lịch sử đơn hàng
           </a>
-        )}
-        <a
-          href="/order-history"
-          style={{
-            background: '#f0f0f0', color: '#333', border: 'none', borderRadius: 8,
-            padding: '10px 16px', textDecoration: 'none', fontWeight: 600
-          }}
-        >
-          Lịch sử đơn
-        </a>
+          <a href="/" className="btn btn-outline">
+            🏠 Về trang chủ
+          </a>
+        </div>
       </div>
     </div>
   );

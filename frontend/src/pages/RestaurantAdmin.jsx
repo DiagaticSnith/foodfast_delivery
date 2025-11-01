@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { api } from '../api/api';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/ToastProvider';
 import Modal from '../components/Modal';
 import '../styles/admin.css';
@@ -81,11 +82,10 @@ const RestaurantAdmin = () => {
   };
 
   // --- Menu management functions ---
+  const navigate = useNavigate();
   const openMenuManager = async (restaurant) => {
-    setSelectedRestaurant(restaurant);
-    setMenuEditing(null);
-    setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });
-    await fetchMenusFor(restaurant.id, menuShowHiddenOnly);
+    // Navigate to a dedicated admin menu page showing this restaurant's menus
+    navigate(`/admin/menus?restaurantId=${restaurant.id}`);
   };
 
   const fetchMenusFor = async (restaurantId, hiddenOnlyFlag = false) => {
@@ -168,42 +168,107 @@ const RestaurantAdmin = () => {
         onClose={()=>{setOpenModal(false); setEditing(null);}}
         footer={null}
       >
-        <form onSubmit={handleSubmit} className="ff-form">
-          <input className="ff-input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tên nhà hàng" required />
-          <input className="ff-input" value={form.address} onChange={e=>setForm(f=>({...f,address:e.target.value}))} placeholder="Địa chỉ" required />
-          <div className="ff-row ff-align-center">
-            <input type="file" accept="image/*" onChange={async (e)=>{
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setUploadingRestaurantImage(true);
-              try {
-                const fd = new FormData();
-                fd.append('image', file);
-                const res = await api.post(`/api/upload?folder=restaurants`, fd, {
-                  headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                setForm(f=>({...f, imageUrl: res.data.url }));
-              } catch (err) {
-                const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
-                try { toast.error(msg); } catch {}
-              } finally {
-                setUploadingRestaurantImage(false);
-              }
-            }} />
-            {uploadingRestaurantImage && <span style={{fontSize:12,color:'#888'}}>Đang tải ảnh...</span>}
-          </div>
-          {form.imageUrl && (
-            <div className="ff-row ff-align-center">
-              <img src={form.imageUrl} alt="preview-restaurant" className="ff-img--preview" onError={(e)=>{e.currentTarget.style.display='none';}} />
-              <span style={{color:'#888',fontSize:12}}>Preview</span>
+        <div className="restaurant-form">
+          <form onSubmit={handleSubmit} className="ff-stack">
+            <div className="form-field">
+              <label className="form-label">Tên nhà hàng</label>
+              <input 
+                className="ff-input" 
+                value={form.name} 
+                onChange={e=>setForm(f=>({...f,name:e.target.value}))} 
+                placeholder="Nhập tên nhà hàng" 
+                required 
+              />
             </div>
-          )}
-          <textarea className="ff-textarea" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" rows={3} />
-          <div className="ff-actions ff-mt-4">
-            <button type="button" onClick={()=>{setOpenModal(false); setEditing(null);}} className="ff-btn ff-btn--ghost">Hủy</button>
-            <button type="submit" disabled={loading||uploadingRestaurantImage} className="ff-btn ff-btn--accent">{editing ? 'Cập nhật' : 'Thêm mới'}</button>
-          </div>
-        </form>
+            
+            <div className="form-field">
+              <label className="form-label">Địa chỉ</label>
+              <input 
+                className="ff-input" 
+                value={form.address} 
+                onChange={e=>setForm(f=>({...f,address:e.target.value}))} 
+                placeholder="Nhập địa chỉ nhà hàng" 
+                required 
+              />
+            </div>
+            
+            <div className="form-field">
+              <label className="form-label">Ảnh nhà hàng</label>
+              <div className="file-upload-section">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="file-input"
+                  onChange={async (e)=>{
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingRestaurantImage(true);
+                    try {
+                      const fd = new FormData();
+                      fd.append('image', file);
+                      const res = await api.post(`/api/upload?folder=restaurants`, fd, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                      });
+                      setForm(f=>({...f, imageUrl: res.data.url }));
+                    } catch (err) {
+                      const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
+                      try { toast.error(msg); } catch {}
+                    } finally {
+                      setUploadingRestaurantImage(false);
+                    }
+                  }} 
+                />
+                {uploadingRestaurantImage && (
+                  <div className="upload-status">
+                    <span className="loading-text">🔄 Đang tải ảnh...</span>
+                  </div>
+                )}
+              </div>
+              
+              {form.imageUrl && (
+                <div className="image-preview">
+                  <img 
+                    src={form.imageUrl} 
+                    alt="preview-restaurant" 
+                    className="ff-img--preview-lg" 
+                    onError={(e)=>{e.currentTarget.style.display='none';}} 
+                  />
+                  <div className="preview-label">
+                    <span className="preview-text">🖼️ Xem trước ảnh</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="form-field">
+              <label className="form-label">Mô tả nhà hàng</label>
+              <textarea 
+                className="ff-textarea" 
+                value={form.description} 
+                onChange={e=>setForm(f=>({...f,description:e.target.value}))} 
+                placeholder="Mô tả về nhà hàng, món ăn đặc sản..." 
+                rows={4} 
+              />
+            </div>
+            
+            <div className="ff-actions">
+              <button 
+                type="button" 
+                onClick={()=>{setOpenModal(false); setEditing(null);}} 
+                className="ff-btn ff-btn--ghost"
+              >
+                ❌ Hủy
+              </button>
+              <button 
+                type="submit" 
+                disabled={loading||uploadingRestaurantImage} 
+                className="ff-btn ff-btn--accent"
+              >
+                {editing ? '✓ Cập nhật' : '➕ Thêm mới'}
+              </button>
+            </div>
+          </form>
+        </div>
       </Modal>
       <div className="ff-table-wrap">
   <table className="ff-table ff-table--wide">
@@ -238,13 +303,39 @@ const RestaurantAdmin = () => {
                   <span className={`ff-badge ${r.status==='hidden' ? 'ff-badge--warn' : 'ff-badge--ok'}`}>{r.status}</span>
                 </td>
                 <td className="ff-td">
-                  <button onClick={()=>openMenuManager(r)} className="ff-btn ff-btn--primary ff-btn--small" style={{marginRight:6}}>Menu</button>
-                  <button onClick={()=>handleEdit(r)} className="ff-btn ff-btn--success ff-btn--small" style={{marginRight:6}}>Sửa</button>
-                  {r.status === 'hidden' ? (
-                    <button onClick={()=>handleRestore(r.id)} className="ff-btn ff-btn--primary ff-btn--small">Khôi phục</button>
-                  ) : (
-                    <button onClick={()=>handleDelete(r.id)} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>
-                  )}
+                  <div className="table-actions">
+                    <button 
+                      onClick={()=>openMenuManager(r)} 
+                      className="btn-icon btn-icon--menu"
+                      title="Quản lý menu"
+                    >
+                      📋 Menu
+                    </button>
+                    <button 
+                      onClick={()=>handleEdit(r)} 
+                      className="btn-icon btn-icon--edit"
+                      title="Chỉnh sửa thông tin"
+                    >
+                      ✏️ Sửa
+                    </button>
+                    {r.status === 'hidden' ? (
+                      <button 
+                        onClick={()=>handleRestore(r.id)} 
+                        className="btn-icon btn-icon--restore"
+                        title="Khôi phục nhà hàng"
+                      >
+                        🔄 Khôi phục
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={()=>handleDelete(r.id)} 
+                        className="btn-icon btn-icon--hide"
+                        title="Ẩn nhà hàng"
+                      >
+                        🚫 Ẩn
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -261,118 +352,131 @@ const RestaurantAdmin = () => {
         )}
       </div>
 
-      {/* Modal quản lý menu của nhà hàng */}
-      {selectedRestaurant && (
-        <div className="ff-panel">
-          <div className="ff-panel__header">
-            <h3 className="ff-panel__title">Menu - {selectedRestaurant.name}</h3>
-            <div className="ff-row ff-align-center ff-gap-12">
-              <button onClick={()=>setSelectedRestaurant(null)} className="ff-btn ff-btn--ghost ff-btn--small">Đóng</button>
+      {/* Modal quản lý menu của nhà hàng (màn hình lớn popup) */}
+      <Modal open={!!selectedRestaurant} title={selectedRestaurant ? `🍽️ Menu - ${selectedRestaurant.name}` : ''} onClose={()=>{ setSelectedRestaurant(null); setMenus([]); }} footer={null} size="xl">
+        <div className="menu-management">
+          <div className="menu-toolbar">
+            <div className="toolbar-left">
+              <button onClick={openCreateMenu} className="ff-btn ff-btn--success menu-add-btn">
+                ➕ Thêm món mới
+              </button>
+              <label className="ff-checkbox menu-filter">
+                <input type="checkbox" checked={menuShowHiddenOnly} onChange={()=>{ setMenuPage(1); toggleMenuHiddenOnly(); }} /> 
+                <span>👁️‍🗨️ Chỉ hiện món đã ẩn</span>
+              </label>
+            </div>
+            <div className="toolbar-right">
+              <button onClick={()=>{ setSelectedRestaurant(null); setMenus([]); }} className="ff-btn ff-btn--ghost close-btn">
+                ❌ Đóng
+              </button>
             </div>
           </div>
-          <div className="ff-toolbar">
-            <button onClick={openCreateMenu} className="ff-btn ff-btn--success">+ Thêm món</button>
-            <label className="ff-checkbox">
-              <input type="checkbox" checked={menuShowHiddenOnly} onChange={()=>{ setMenuPage(1); toggleMenuHiddenOnly(); }} /> Chỉ hiện đã ẩn
-            </label>
-          </div>
-          {/* Modal add/edit menu - large preview + tidy grid (same pattern as partner form) */}
-          <Modal open={menuModalOpen} title={menuEditing ? 'Cập nhật món' : 'Thêm món mới'} onClose={()=>{ setMenuModalOpen(false); setMenuEditing(null); }} footer={null} size="xl">
-            <form onSubmit={submitMenu} className="ff-form ff-2col-xl">
-              {/* Left: Upload + Preview */}
-              <div className="ff-stack">
-                {menuForm.imageUrl ? (
-                  <img src={menuForm.imageUrl} alt="preview-menu" className="ff-img--preview-xl" onError={(e)=>{e.currentTarget.style.display='none';}} />
-                ) : (
-                  <div className="ff-imgbox-xl">🍽️</div>
-                )}
-                <input type="file" accept="image/*" onChange={async (e)=>{
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setUploadingMenuImage(true);
-                  try {
-                    const fd = new FormData();
-                    fd.append('image', file);
-                    const res = await api.post(`/api/upload?folder=menus`, fd, {
-                      headers: { 'Content-Type': 'multipart/form-data' }
-                    });
-                    setMenuForm(f=>({...f, imageUrl: res.data.url }));
-                  } catch (err) {
-                    const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
-                    try { toast.error(msg); } catch {}
-                  } finally {
-                    setUploadingMenuImage(false);
-                  }
-                }} />
-                {uploadingMenuImage && <span className="ff-muted">Đang tải ảnh...</span>}
-              </div>
-              {/* Right: Fields in tidy grid */}
-              <div className="ff-formgrid">
-                <input className="ff-input" value={menuForm.name} onChange={e=>setMenuForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required />
-                <input className="ff-input" value={menuForm.price} onChange={e=>setMenuForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required />
-                <input className="ff-input" value={menuForm.category} onChange={e=>setMenuForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" />
-                <textarea className="ff-textarea ff-colspan-2" value={menuForm.description} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" rows={6} />
-                <div className="ff-actions ff-colspan-2">
-                  {menuEditing && <button type="button" onClick={()=>{setMenuEditing(null); setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });}} className="ff-btn ff-btn--ghost">Hủy sửa</button>}
-                  <button type="submit" disabled={menuLoading||uploadingMenuImage} className="ff-btn ff-btn--success">{menuEditing ? 'Cập nhật món' : 'Thêm món'}</button>
-                </div>
-              </div>
-            </form>
-          </Modal>
-          <div style={{maxHeight:360,overflow:'auto'}}>
-            <table className="ff-table ff-table--wide">
-              <thead>
-                <tr style={{background:'#f5f5f5'}}>
-                  <th className="ff-th">ID</th>
-                  <th className="ff-th">Ảnh</th>
-                  <th className="ff-th">Tên</th>
-                  <th className="ff-th">Giá</th>
-                  <th className="ff-th">Phân loại</th>
-                  <th className="ff-th">Trạng thái</th>
-                  <th className="ff-th">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {menus.slice((menuPage-1)*menuPageSize, menuPage*menuPageSize).map(m => (
-                  <tr key={m.id} className="ff-tr">
-                    <td className="ff-td">{m.id}</td>
-                    <td className="ff-td">
-                      <span className="ff-imgbox">
-                        {m.imageUrl ? (
-                          <img src={m.imageUrl} alt={m.name} className="ff-img" onError={(e)=>{e.currentTarget.style.display='none';}} />
-                        ) : (
-                          <span className="ff-imgbox__ph">—</span>
-                        )}
-                      </span>
-                    </td>
-                    <td className="ff-td">{m.name}</td>
-                    <td className="ff-td">{Number(m.price).toLocaleString()}₫</td>
-                    <td className="ff-td">{m.category}</td>
-                    <td className="ff-td">{m.status}</td>
-                    <td className="ff-td">
-                      <button onClick={()=>openEditMenu(m)} className="ff-btn ff-btn--primary ff-btn--small" style={{marginRight:6}}>Sửa</button>
-                      {m.status === 'hidden' ? (
-                        <button onClick={()=>restoreMenu(m.id)} className="ff-btn ff-btn--primary ff-btn--small">Khôi phục</button>
-                      ) : (
-                        <button onClick={()=>deleteMenu(m.id)} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>
-                      )}
-                    </td>
+          <div className="menu-table-container">
+            <div className="ff-table-wrap">
+              <table className="ff-table ff-table--wide menu-table">
+                <thead className="ff-thead">
+                  <tr>
+                    <th className="ff-th">ID</th>
+                    <th className="ff-th">🖼️ Ảnh</th>
+                    <th className="ff-th">🍴 Tên món</th>
+                    <th className="ff-th">💰 Giá</th>
+                    <th className="ff-th">🏷️ Phân loại</th>
+                    <th className="ff-th">🟢 Trạng thái</th>
+                    <th className="ff-th">⚙️ Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {menus.slice((menuPage-1)*menuPageSize, menuPage*menuPageSize).map(m => (
+                    <tr key={m.id} className="ff-tr menu-row">
+                      <td className="ff-td menu-id">{m.id}</td>
+                      <td className="ff-td">
+                        <div className="menu-image">
+                          {m.imageUrl ? (
+                            <img src={m.imageUrl} alt={m.name} className="ff-img menu-img" onError={(e)=>{e.currentTarget.style.display='none';}} />
+                          ) : (
+                            <div className="ff-imgbox menu-placeholder">
+                              <span className="ff-imgbox__ph">🍽️</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="ff-td menu-name">
+                        <span className="dish-name">{m.name}</span>
+                      </td>
+                      <td className="ff-td menu-price">
+                        <span className="price-value">{Number(m.price).toLocaleString()}₫</span>
+                      </td>
+                      <td className="ff-td menu-category">
+                        <span className="category-tag">{m.category}</span>
+                      </td>
+                      <td className="ff-td menu-status">
+                        <span className={`ff-badge ${m.status==='hidden' ? 'ff-badge--warn' : 'ff-badge--ok'}`}>
+                          {m.status === 'hidden' ? '👁️‍🗨️ Ẩn' : '✅ Hoạt động'}
+                        </span>
+                      </td>
+                      <td className="ff-td">
+                        <div className="table-actions">
+                          <button 
+                            onClick={()=>openEditMenu(m)} 
+                            className="btn-icon btn-icon--edit"
+                            title="Chỉnh sửa món ăn"
+                          >
+                            ✏️ Sửa
+                          </button>
+                          {m.status === 'hidden' ? (
+                            <button 
+                              onClick={()=>restoreMenu(m.id)} 
+                              className="btn-icon btn-icon--restore"
+                              title="Khôi phục món ăn"
+                            >
+                              🔄 Khôi phục
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={()=>deleteMenu(m.id)} 
+                              className="btn-icon btn-icon--hide"
+                              title="Ẩn món ăn"
+                            >
+                              🚫 Ẩn
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {Math.ceil(menus.length / menuPageSize) > 1 && (
-              <div className="ff-pagination">
-                <button onClick={()=>setMenuPage(p=>Math.max(1,p-1))} disabled={menuPage===1} className="ff-pagebtn ff-pagebtn--normal">Trước</button>
+              <div className="menu-pagination">
+                <button 
+                  onClick={()=>setMenuPage(p=>Math.max(1,p-1))} 
+                  disabled={menuPage===1} 
+                  className="ff-pagebtn ff-pagebtn--normal"
+                >
+                  ⬅️ Trước
+                </button>
                 {Array.from({length: Math.ceil(menus.length / menuPageSize)}, (_,i)=> (
-                  <button key={i} onClick={()=>setMenuPage(i+1)} className={`ff-pagebtn ${menuPage===i+1 ? 'ff-pagebtn--secondary' : 'ff-pagebtn--normal'}`}>{i+1}</button>
+                  <button 
+                    key={i} 
+                    onClick={()=>setMenuPage(i+1)} 
+                    className={`ff-pagebtn ${menuPage===i+1 ? 'ff-pagebtn--secondary' : 'ff-pagebtn--normal'}`}
+                  >
+                    {i+1}
+                  </button>
                 ))}
-                <button onClick={()=>setMenuPage(p=>Math.min(Math.ceil(menus.length/menuPageSize),p+1))} disabled={menuPage===Math.ceil(menus.length/menuPageSize)} className="ff-pagebtn ff-pagebtn--normal">Sau</button>
+                <button 
+                  onClick={()=>setMenuPage(p=>Math.min(Math.ceil(menus.length/menuPageSize),p+1))} 
+                  disabled={menuPage===Math.ceil(menus.length/menuPageSize)} 
+                  className="ff-pagebtn ff-pagebtn--normal"
+                >
+                  Sau ➡️
+                </button>
               </div>
             )}
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

@@ -15,7 +15,7 @@ const mapStatus = (raw) => {
       return { label: 'Đã nhận', cls: 'ff-badge--info' };
     case 'pending':
     case 'restaurantpending':
-      return { label: 'Đang chờ', cls: 'ff-badge--pending' };
+      return { label: '🕰️ Chờ xác nhận', cls: 'ff-badge--pending' };
     case 'rejected':
     case 'cancelled':
     case 'canceled':
@@ -29,6 +29,12 @@ const mapStatus = (raw) => {
       return { label: 'Hoạt động', cls: 'ff-badge--info' };
     case 'hidden':
       return { label: 'Ẩn', cls: 'ff-badge--pending' };
+    case 'available':
+      return { label: '🟢 Sẵn sàng', cls: 'ff-badge--ok' };
+    case 'busy':
+      return { label: '🔴 Đang bận', cls: 'ff-badge--danger' };
+    case 'maintenance':
+      return { label: '🔧 Bảo trì', cls: 'ff-badge--warn' };
     default:
       return { label: s || '—', cls: 'ff-badge--neutral' };
   }

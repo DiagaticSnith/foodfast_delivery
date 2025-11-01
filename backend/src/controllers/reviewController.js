@@ -77,7 +77,14 @@ exports.listForUser = async (req, res, next) => {
     const userId = Number(req.params.userId);
     const where = { userId };
     // Non-admins can only see approved reviews (or their own reviews)
-    if (req.user?.role !== 'admin') {
+    if (req.user?.role === 'admin') {
+      // admins may optionally request hidden/pending by passing includeHidden=1
+      if (req.query.includeHidden === '1') {
+        // do not restrict by status
+      } else {
+        // default for admin: show approved and hidden (all statuses) — keep no status filter
+      }
+    } else {
       if (req.user?.id === userId) {
         // allow the user to see their own reviews (all statuses)
       } else {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { api } from '../api/api';
 import Modal from '../components/Modal';
 import { useToast } from '../components/ToastProvider';
 
@@ -23,7 +24,7 @@ export default function UserAdmin(){
   const toast = useToast();
 
   const fetchUsers = async () => {
-    const res = await axios.get('/api/users');
+    const res = await api.get('/api/users');
     setUsers(res.data);
   };
 
@@ -56,7 +57,8 @@ export default function UserAdmin(){
     setUserReviews([]);
     setReviewsLoading(true);
     try {
-      const res = await axios.get(`/api/users/${u.id}/reviews`);
+      // Request includeHidden so admins can see hidden reviews and unhide them
+      const res = await api.get(`/api/users/${u.id}/reviews?includeHidden=1`);
       setUserReviews(res.data || []);
     } catch (err) {
       console.error(err);
@@ -68,10 +70,10 @@ export default function UserAdmin(){
 
   const changeReviewStatus = async (reviewId, status) => {
     try {
-      await axios.put(`/api/reviews/${reviewId}/status`, { status });
+      await api.put(`/api/reviews/${reviewId}/status`, { status });
       // refresh
       if (selectedUser) {
-        const res = await axios.get(`/api/users/${selectedUser.id}/reviews`);
+        const res = await api.get(`/api/users/${selectedUser.id}/reviews`);
         setUserReviews(res.data || []);
       }
       try { toast && toast.success('Cập nhật trạng thái thành công'); } catch {}
@@ -84,7 +86,7 @@ export default function UserAdmin(){
   const submitInfo = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
-    await axios.put(`/api/users/${selectedUser.id}/info`, infoForm);
+  await api.put(`/api/users/${selectedUser.id}/info`, infoForm);
     setEditInfoOpen(false);
     setSelectedUser(null);
     fetchUsers();
@@ -92,7 +94,7 @@ export default function UserAdmin(){
   const submitRole = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
-    await axios.put(`/api/users/${selectedUser.id}/role`, { role: roleValue });
+  await api.put(`/api/users/${selectedUser.id}/role`, { role: roleValue });
     setEditRoleOpen(false);
     setSelectedUser(null);
     fetchUsers();
@@ -155,16 +157,52 @@ export default function UserAdmin(){
 
       {/* Modals */}
       <Modal open={editInfoOpen} title={`Sửa thông tin - ${selectedUser?.username || ''}`} onClose={()=>{setEditInfoOpen(false); setSelectedUser(null);}} footer={null}>
-        <form onSubmit={submitInfo} style={{display:'grid',gap:12}}>
-          <input value={infoForm.name} onChange={e=>setInfoForm(f=>({...f,name:e.target.value}))} placeholder="Tên" style={{padding:10,borderRadius:8,border:'1px solid #ddd'}} />
-          <input type="email" value={infoForm.email} onChange={e=>setInfoForm(f=>({...f,email:e.target.value}))} placeholder="Email" style={{padding:10,borderRadius:8,border:'1px solid #ddd'}} />
-          <input value={infoForm.address} onChange={e=>setInfoForm(f=>({...f,address:e.target.value}))} placeholder="Địa chỉ" style={{padding:10,borderRadius:8,border:'1px solid #ddd'}} />
-          <input value={infoForm.phoneNumber} onChange={e=>setInfoForm(f=>({...f,phoneNumber:e.target.value}))} placeholder="Số điện thoại" style={{padding:10,borderRadius:8,border:'1px solid #ddd'}} />
+        <div className="ff-form">
+          <form onSubmit={submitInfo} className="ff-stack">
+            <div className="form-field">
+              <label className="form-label">Tên hiển thị</label>
+              <input 
+                className="ff-input" 
+                value={infoForm.name} 
+                onChange={e=>setInfoForm(f=>({...f,name:e.target.value}))} 
+                placeholder="Nhập tên hiển thị" 
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Email</label>
+              <input 
+                className="ff-input" 
+                type="email" 
+                value={infoForm.email} 
+                onChange={e=>setInfoForm(f=>({...f,email:e.target.value}))} 
+                placeholder="Nhập địa chỉ email" 
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Địa chỉ</label>
+              <input 
+                className="ff-input" 
+                value={infoForm.address} 
+                onChange={e=>setInfoForm(f=>({...f,address:e.target.value}))} 
+                placeholder="Nhập địa chỉ" 
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Số điện thoại</label>
+              <input 
+                className="ff-input" 
+                value={infoForm.phoneNumber} 
+                onChange={e=>setInfoForm(f=>({...f,phoneNumber:e.target.value}))} 
+                placeholder="Nhập số điện thoại" 
+              />
+            </div>
+            
           <div style={{display:'flex',justifyContent:'flex-end',gap:8}}>
             <button type="button" onClick={()=>{setEditInfoOpen(false); setSelectedUser(null);}} style={{background:'#eee',border:'none',borderRadius:8,padding:'8px 16px'}}>Hủy</button>
             <button type="submit" style={{background:'#1677ff',color:'#fff',border:'none',borderRadius:8,padding:'8px 16px'}}>Lưu</button>
           </div>
         </form>
+        </div>
       </Modal>
 
       <Modal open={reviewsOpen} title={`Bình luận - ${selectedUser?.username || ''}`} onClose={()=>{setReviewsOpen(false); setSelectedUser(null); setUserReviews([]);}} footer={null}>
@@ -185,8 +223,17 @@ export default function UserAdmin(){
                     <div style={{marginTop:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                       <div><span className={`ff-badge ${r.status==='hidden' ? 'ff-badge--warn' : 'ff-badge--ok'}`}>{r.status}</span></div>
                       <div style={{display:'flex',gap:8}}>
-                        {r.status !== 'approved' && <button onClick={()=>changeReviewStatus(r.id,'approved')} className="ff-btn ff-btn--primary ff-btn--small">Hiện</button>}
-                        {r.status !== 'hidden' && <button onClick={()=>changeReviewStatus(r.id,'hidden')} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>}
+                        {r.status === 'hidden' ? (
+                          <button onClick={()=>{
+                            if (!window.confirm('Bạn có chắc muốn hiện bình luận này không?')) return;
+                            changeReviewStatus(r.id,'approved');
+                          }} className="ff-btn ff-btn--primary ff-btn--small">Hiện</button>
+                        ) : (
+                          <button onClick={()=>{
+                            if (!window.confirm('Bạn có chắc muốn ẩn bình luận này không?')) return;
+                            changeReviewStatus(r.id,'hidden');
+                          }} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -198,7 +245,8 @@ export default function UserAdmin(){
       </Modal>
 
       <Modal open={editRoleOpen} title={`Đổi role - ${selectedUser?.username || ''}`} onClose={()=>{setEditRoleOpen(false); setSelectedUser(null);}} footer={null}>
-        <form onSubmit={submitRole} style={{display:'grid',gap:12}}>
+          <div className="ff-form">
+          <form onSubmit={submitRole} className="ff-stack">
           <select value={roleValue} onChange={e=>setRoleValue(e.target.value)} style={{padding:10,borderRadius:8,border:'1px solid #ddd'}}>
             {roles.map(r=> <option key={r} value={r}>{r}</option>)}
           </select>
@@ -207,6 +255,7 @@ export default function UserAdmin(){
             <button type="submit" style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'8px 16px'}}>Cập nhật</button>
           </div>
         </form>
+        </div>
       </Modal>
     </div>
   );

@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import '../styles/Header.css';
 
 const Header = ({ user, setUser }) => {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    
     // Xác định đường dẫn về dashboard phù hợp
     let homePath = '/';
     if (user) {
@@ -9,76 +12,102 @@ const Header = ({ user, setUser }) => {
         else if (user.role === 'restaurant') homePath = '/restaurant-dashboard';
         else homePath = '/';
     }
+    
     return (
-	<header className="header">
-		<nav className="navbar">
-			<Link className="navbar-brand" to={homePath}>Fastfood Delivery</Link>
-            <div>
-                {(!user || (user.role !== 'admin' && user.role !== 'restaurant')) && (
-					<>
-						<Link to="/cart">Giỏ hàng</Link>
-						<Link to="/order-history">Lịch sử đơn</Link>
-					</>
-				)}
-				{user?.role === 'admin' && (
-					<Link to="/drone-monitoring">🗺️ Giám sát Drone</Link>
-				)}
-				{user ? (
-                                                                <div style={{position:'relative',display:'inline-block',marginLeft:24}}>
-                                                                    <button
-                                                                        style={{background:'none',border:'none',color:'#ffd666',fontWeight:'bold',fontSize:16,cursor:'pointer',padding:'6px 18px',borderRadius:8}}
-                                                                        onClick={e => {
-                                                                            const menu = document.getElementById('user-menu-dropdown');
-                                                                            if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                                                                        }}
-                                                                        onBlur={e => {
-                                                                            setTimeout(() => {
-                                                                                const menu = document.getElementById('user-menu-dropdown');
-                                                                                if (menu) menu.style.display = 'none';
-                                                                            }, 150);
-                                                                        }}
-                                                                    >
-                                                                        Xin chào, {user.username} &#x25BC;
-                                                                    </button>
-                                                                    <div id="user-menu-dropdown" style={{display:'none',position:'absolute',right:0,top:'110%',background:'#fff',boxShadow:'0 2px 8px #eee',borderRadius:8,minWidth:180,zIndex:1000}}>
-                                                                                                                                                <a href="/user-info" style={{display:'block',padding:'12px 20px',color:'#333',textDecoration:'none',borderBottom:'1px solid #eee',borderRadius:0,fontWeight:500}}>Thông tin cá nhân</a>
-                                                                                                                                                {user.role === 'shipper' && (
-                                                                                                                                                    <a href="/shipper-dashboard" style={{display:'block',padding:'12px 20px',color:'#189c38',textDecoration:'none',borderBottom:'1px solid #eee',fontWeight:500}}>Shipper Dashboard</a>
-                                                                                                                                                )}
-                                                                        <button
-                                                                            style={{
-                                                                                width: '100%',
-                                                                                background: 'none',
-                                                                                border: 'none',
-                                                                                color: '#ff4d4f',
-                                                                                padding: '12px 20px',
-                                                                                textAlign: 'left',
-                                                                                fontWeight: 500,
-                                                                                borderRadius: 0,
-                                                                                borderTop: '1px solid #eee',
-                                                                                cursor: 'pointer',
-                                                                                outline: 'none',
-                                                                                transition: 'background 0.2s, color 0.2s'
-                                                                            }}
-                                                                            onMouseOver={e => {
-                                                                                e.currentTarget.style.background = '#f5f5f5';
-                                                                                e.currentTarget.style.color = '#d32f2f';
-                                                                            }}
-                                                                            onMouseOut={e => {
-                                                                                e.currentTarget.style.background = 'none';
-                                                                                e.currentTarget.style.color = '#ff4d4f';
-                                                                            }}
-                                                                            onClick={() => { setUser(null); localStorage.clear(); window.location.href = '/'; }}
-                                                                        >Đăng xuất</button>
-                                                                    </div>
-                                                                </div>
-						) : (
-							<Link to="/login">Đăng nhập</Link>
-						)}
-			</div>
-		</nav>
-	</header>
-
+        <header className="modern-header">
+            <div className="header-container">
+                {/* Logo Section */}
+                <div className="logo-section">
+                    <Link className="brand-logo" to={homePath}>
+                        <span className="logo-icon">🍕</span>
+                        <span className="brand-text">
+                            <span className="brand-name">Foodfast</span>
+                            <span className="brand-subtitle">Delivery</span>
+                        </span>
+                    </Link>
+                </div>
+                
+                {/* Navigation Links - Empty for now */}
+                <nav className="nav-links">
+                </nav>
+                
+                {/* User Section */}
+                <div className="user-section">
+                    {user ? (
+                        <>
+                            {/* Cart Button - Only for regular users */}
+                            {(!user || (user.role !== 'admin' && user.role !== 'restaurant')) && (
+                                <Link to="/cart" className="cart-button">
+                                    <span className="cart-icon">🛒</span>
+                                    <span className="cart-text">Giỏ hàng</span>
+                                </Link>
+                            )}
+                            
+                            {/* User Dropdown */}
+                            <div className="user-dropdown">
+                                <button 
+                                    className="user-button"
+                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                    onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+                                >
+                                    <div className="user-avatar">
+                                        <span className="avatar-text">
+                                            {user.username?.charAt(0)?.toUpperCase() || 'U'}
+                                        </span>
+                                    </div>
+                                    <div className="user-info">
+                                        <span className="user-greeting">Xin chào</span>
+                                        <span className="user-name">{user.username}</span>
+                                    </div>
+                                    <span className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}>▼</span>
+                                </button>
+                                
+                                {dropdownOpen && (
+                                    <div className="dropdown-menu">
+                                        <Link to="/user-info" className="dropdown-item">
+                                            <span className="dropdown-icon">👤</span>
+                                            <span>Thông tin cá nhân</span>
+                                        </Link>
+                                        
+                                        {/* Order History - Only for regular users */}
+                                        {(!user || (user.role !== 'admin' && user.role !== 'restaurant')) && (
+                                            <Link to="/order-history" className="dropdown-item">
+                                                <span className="dropdown-icon">📋</span>
+                                                <span>Lịch sử đơn</span>
+                                            </Link>
+                                        )}
+                                        
+                                        {user.role === 'shipper' && (
+                                            <Link to="/shipper-dashboard" className="dropdown-item shipper">
+                                                <span className="dropdown-icon">🚚</span>
+                                                <span>Shipper Dashboard</span>
+                                            </Link>
+                                        )}
+                                        
+                                        <button 
+                                            className="dropdown-item logout"
+                                            onClick={() => {
+                                                setUser(null);
+                                                localStorage.clear();
+                                                window.location.href = '/';
+                                            }}
+                                        >
+                                            <span className="dropdown-icon">🚪</span>
+                                            <span>Đăng xuất</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <Link to="/login" className="login-button">
+                            <span className="login-icon">🔑</span>
+                            <span>Đăng nhập</span>
+                        </Link>
+                    )}
+                </div>
+            </div>
+        </header>
     );
 };
 

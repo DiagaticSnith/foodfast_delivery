@@ -119,8 +119,12 @@ const OrderHistory = () => {
 		);
 
 		return (
-			<div className="oh">
-				<h2 className="oh-title">Lịch sử đơn hàng</h2>
+			<div className="site-container">
+				<div className="oh">
+					<div className="oh-header">
+						<h1 className="oh-title">📋 Lịch sử đơn hàng</h1>
+						<button onClick={() => navigate('/')} className="btn btn-ghost">← Trang chủ</button>
+					</div>
 
 				{/* Đang giao */}
 				<h3 className="oh-section">🚚 Đơn đang giao</h3>
@@ -148,6 +152,7 @@ const OrderHistory = () => {
 						)}
 					</>
 				)}
+				</div>
 			</div>
 		);
 };

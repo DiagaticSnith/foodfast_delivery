@@ -2,7 +2,6 @@ import BusinessAdmin from './BusinessAdmin';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import RestaurantAdmin from './RestaurantAdmin';
-import MenuAdmin from './MenuAdmin';
 import DroneAdmin from './DroneAdmin';
 import OrderAdmin from './OrderAdmin';
 import UserAdmin from './UserAdmin';
@@ -27,18 +26,57 @@ const AdminDashboard = () => {
     setSearchParams({ tab: newTab });
   };
 
+  // (no-op) keep tab controlled via changeTab / URL initial param
+
   return (
-    <div style={{ maxWidth: 1200, margin: '40px auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee', padding: 32 }}>
-      <h1 style={{ color: '#ff4d4f', marginBottom: 32 }}>Admin Dashboard</h1>
-      <div style={{display:'flex',gap:16,marginBottom:32,flexWrap:'wrap'}}>
-        <button onClick={()=>changeTab('restaurant')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='restaurant'?'#ff4d4f':'#eee',color:tab==='restaurant'?'#fff':'#333',fontWeight:600,fontSize:16}}>🏢 Nhà hàng</button>
-        <button onClick={()=>changeTab('drone')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='drone'?'#ff4d4f':'#eee',color:tab==='drone'?'#fff':'#333',fontWeight:600,fontSize:16}}>🚁 Drone</button>
-        <button onClick={()=>changeTab('order')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='order'?'#ff4d4f':'#eee',color:tab==='order'?'#fff':'#333',fontWeight:600,fontSize:16}}>📦 Đơn hàng</button>
-        <button onClick={()=>changeTab('business')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='business'?'#ff4d4f':'#eee',color:tab==='business'?'#fff':'#333',fontWeight:600,fontSize:16}}>🤝 Đối tác</button>
-        <button onClick={()=>changeTab('user')} style={{padding:'10px 24px',borderRadius:8,border:'none',background:tab==='user'?'#ff4d4f':'#eee',color:tab==='user'?'#fff':'#333',fontWeight:600,fontSize:16}}>👥 Người dùng</button>
-        <a href="/drone-monitoring" style={{padding:'10px 24px',borderRadius:8,border:'none',background:'#1890ff',color:'#fff',fontWeight:600,fontSize:16,textDecoration:'none'}}>🗺️ Bản đồ drone</a>
+    <div className="admin-dashboard">
+      <div className="admin-header">
+        <h1 className="admin-title">Admin Dashboard</h1>
+        <p className="admin-subtitle">Quản lý hệ thống giao hàng FoodFast</p>
       </div>
-      {tab === 'restaurant' && <RestaurantAdmin />}
+      <div className="admin-tabs">
+        <button 
+          onClick={()=>changeTab('restaurant')} 
+          className={`admin-tab ${tab==='restaurant' ? 'admin-tab--active' : ''}`}
+        >
+          <span className="tab-icon">🏢</span>
+          <span>Nhà hàng</span>
+        </button>
+        <button 
+          onClick={()=>changeTab('drone')} 
+          className={`admin-tab ${tab==='drone' ? 'admin-tab--active' : ''}`}
+        >
+          <span className="tab-icon">🚁</span>
+          <span>Drone</span>
+        </button>
+        
+        <button 
+          onClick={()=>changeTab('order')} 
+          className={`admin-tab ${tab==='order' ? 'admin-tab--active' : ''}`}
+        >
+          <span className="tab-icon">📦</span>
+          <span>Đơn hàng</span>
+        </button>
+        <button 
+          onClick={()=>changeTab('business')} 
+          className={`admin-tab ${tab==='business' ? 'admin-tab--active' : ''}`}
+        >
+          <span className="tab-icon">🤝</span>
+          <span>Đối tác</span>
+        </button>
+        <button 
+          onClick={()=>changeTab('user')} 
+          className={`admin-tab ${tab==='user' ? 'admin-tab--active' : ''}`}
+        >
+          <span className="tab-icon">👥</span>
+          <span>Người dùng</span>
+        </button>
+        <a href="/drone-monitoring" className="admin-tab admin-tab--special">
+          <span className="tab-icon">🗺️</span>
+          <span>Bản đồ drone</span>
+        </a>
+      </div>
+    {tab === 'restaurant' && <RestaurantAdmin />}
       {tab === 'drone' && <DroneAdmin />}
       {tab === 'order' && <OrderAdmin />}
       {tab === 'business' && <BusinessAdmin />}

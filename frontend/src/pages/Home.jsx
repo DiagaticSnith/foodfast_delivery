@@ -9,6 +9,8 @@ const Home = () => {
 		const [restaurants, setRestaurants] = useState([]);
 		const [menus, setMenus] = useState([]);
 
+
+
 	useEffect(() => {
 		const load = async () => {
 			try {
@@ -37,6 +39,7 @@ const Home = () => {
 
 	return (
 		<div className="site-container">
+
 			{/* Restaurants section */}
 			<div className="section">
 				<div className="section-header">

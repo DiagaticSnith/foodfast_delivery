@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import StatusBadge from '../components/StatusBadge';
 
@@ -74,41 +75,77 @@ const OrderAdmin = () => {
             <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{padding:'6px 14px',borderRadius:6,border:'1px solid #eee',background:'#fff',color:'#333',fontWeight:600,cursor:page===totalPages?'not-allowed':'pointer'}}>Sau</button>
           </div>
         )}
-        {selectedOrder && (
-          <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.3)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setSelectedOrder(null)}>
-            <div style={{background:'#fff',padding:32,borderRadius:12,minWidth:400,maxWidth:600,boxShadow:'0 2px 16px #888',position:'relative'}} onClick={e=>e.stopPropagation()}>
-              <h2>Chi tiết đơn #{selectedOrder.id}</h2>
-              <div><b>Khách hàng:</b> {users.find(u=>u.id===selectedOrder.userId)?.name || selectedOrder.userId}</div>
-              <div><b>Địa chỉ:</b> {selectedOrder.address}</div>
-              <div><b>Tổng tiền:</b> {Number(selectedOrder.total).toLocaleString()}₫</div>
-              <div><b>Trạng thái:</b> <StatusBadge status={selectedOrder.status} /></div>
-              <div><b>Drone:</b> {selectedOrder.droneId ? `#${selectedOrder.droneId}` : 'Chưa gán'}</div>
-              <div style={{margin:'16px 0'}}>
-                <b>Danh sách món:</b>
-                <table style={{width:'100%',marginTop:8,borderCollapse:'collapse'}}>
-                  <thead>
-                    <tr style={{background:'#fafafa'}}>
-                      <th style={{padding:'8px',textAlign:'center'}}>Tên món</th>
-                      <th style={{padding:'8px',textAlign:'center'}}>Số lượng</th>
-                      <th style={{padding:'8px',textAlign:'center'}}>Đơn giá</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selectedOrder.OrderDetails || []).map(od => (
-                      <tr key={od.id}>
-                        <td style={{padding:'8px',textAlign:'center'}}>{od.Menu?.name || od.menuId}</td>
-                        <td style={{padding:'8px',textAlign:'center'}}>{od.quantity}</td>
-                        <td style={{padding:'8px',textAlign:'center'}}>{Number(od.price).toLocaleString()}₫</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {selectedOrder && createPortal(
+          <div className="order-modal-backdrop" onClick={()=>setSelectedOrder(null)}>
+            <div className="order-modal-content" onClick={e=>e.stopPropagation()}>
+              <div className="order-modal-header">
+                <h2 className="order-modal-title">📋 Chi tiết đơn #{selectedOrder.id}</h2>
+                <button 
+                  className="order-modal-close" 
+                  onClick={()=>setSelectedOrder(null)}
+                >
+                  ×
+                </button>
               </div>
-              <div style={{marginTop:16,textAlign:'center'}}>
-                <button style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}} onClick={()=>setSelectedOrder(null)}>Đóng</button>
+              
+              <div className="order-modal-body">
+                <div className="order-info-grid">
+                  <div className="order-info-item">
+                    <span className="info-label">👤 Khách hàng:</span>
+                    <span className="info-value">{users.find(u=>u.id===selectedOrder.userId)?.name || selectedOrder.userId}</span>
+                  </div>
+                  
+                  <div className="order-info-item">
+                    <span className="info-label">📍 Địa chỉ:</span>
+                    <span className="info-value">{selectedOrder.address}</span>
+                  </div>
+                  
+                  <div className="order-info-item">
+                    <span className="info-label">💰 Tổng tiền:</span>
+                    <span className="info-value price">{Number(selectedOrder.total).toLocaleString()}₫</span>
+                  </div>
+                  
+                  <div className="order-info-item">
+                    <span className="info-label">📊 Trạng thái:</span>
+                    <StatusBadge status={selectedOrder.status} />
+                  </div>
+                  
+                  <div className="order-info-item">
+                    <span className="info-label">🚁 Drone:</span>
+                    <span className="info-value">{selectedOrder.droneId ? `#${selectedOrder.droneId}` : 'Chưa gán'}</span>
+                  </div>
+                </div>
+                
+                <div className="order-items-section">
+                  <h3 className="section-title">🍽️ Danh sách món</h3>
+                  <div className="order-items-table">
+                    <div className="table-header">
+                      <div className="table-cell">Tên món</div>
+                      <div className="table-cell">Số lượng</div>
+                      <div className="table-cell">Đơn giá</div>
+                    </div>
+                    {(selectedOrder.OrderDetails || []).map(od => (
+                      <div key={od.id} className="table-row">
+                        <div className="table-cell">{od.Menu?.name || od.menuId}</div>
+                        <div className="table-cell">{od.quantity}</div>
+                        <div className="table-cell price">{Number(od.price).toLocaleString()}₫</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="order-modal-footer">
+                <button 
+                  className="btn btn-outline" 
+                  onClick={()=>setSelectedOrder(null)}
+                >
+                  Đóng
+                </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

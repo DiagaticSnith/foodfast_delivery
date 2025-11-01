@@ -13,6 +13,9 @@ const Restaurants = () => {
   const [error, setError] = useState('');
 
   const q = searchParams.get('q') || '';
+  // IME-safe local input for search (commit only on Enter / button / composition end)
+  const [searchInput, setSearchInput] = useState(q);
+  const [isComposing, setIsComposing] = useState(false);
   const sort = searchParams.get('sort') || 'name_asc'; // name_asc | name_desc | address_asc | address_desc
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
 
@@ -60,6 +63,11 @@ const Restaurants = () => {
     if (value === undefined || value === null || value === '') next.delete(key); else next.set(key, String(value));
     if (key !== 'page') next.set('page', '1');
     setSearchParams(next);
+    
+    // Scroll to top when changing page
+    if (key === 'page') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -73,10 +81,19 @@ const Restaurants = () => {
         <input
           type="text"
           placeholder="Tìm nhà hàng..."
-          value={q}
-          onChange={(e) => updateParam('q', e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={(e) => {
+            setIsComposing(false);
+            const v = e.target.value;
+            setSearchInput(v);
+            updateParam('q', v);
+          }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !isComposing) updateParam('q', searchInput); }}
           className="ff-input ff-input--min"
         />
+        <button className="ff-btn ff-btn--normal" onClick={() => updateParam('q', searchInput)}>Tìm</button>
         <select value={sort} onChange={(e) => updateParam('sort', e.target.value)} className="ff-select">
           <option value="name_asc">Tên A → Z</option>
           <option value="name_desc">Tên Z → A</option>

@@ -27,6 +27,7 @@ const RestaurantDashboard = () => {
   const [uploadingMenuImage, setUploadingMenuImage] = useState(false);
   const [menuPage, setMenuPage] = useState(1);
   const menuPageSize = 6;
+  const [showHiddenMenus, setShowHiddenMenus] = useState(false);
 
   // Orders state
   const [orders, setOrders] = useState([]);
@@ -34,6 +35,8 @@ const RestaurantDashboard = () => {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [history, setHistory] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const prevOrderCountsRef = useRef({ pending: 0, accepted: 0, delivering: 0 });
+  const firstOrdersLoadRef = useRef(true);
   // Sim and progress for delivering orders
   const deliveringSimsRef = useRef({}); // { [orderId]: DroneSimulator }
   const [deliverProgress, setDeliverProgress] = useState({}); // { [orderId]: number 0..1 }
@@ -80,6 +83,25 @@ const RestaurantDashboard = () => {
     // eslint-disable-next-line
   }, []);
 
+  // Poll orders periodically so restaurant sees new incoming orders and gets notified
+  useEffect(() => {
+    if (user?.role !== 'restaurant') return;
+    const iv = setInterval(() => {
+      fetchOrders();
+    }, 8000); // every 8s
+    return () => clearInterval(iv);
+    // eslint-disable-next-line
+  }, [user?.role]);
+
+  // When user toggles showing hidden menus, refetch
+  useEffect(() => {
+    if (user?.role === 'restaurant') {
+      setMenuPage(1);
+      fetchMenus();
+    }
+    // eslint-disable-next-line
+  }, [showHiddenMenus]);
+
   const fetchStore = async () => {
     try {
       setStoreLoading(true);
@@ -94,7 +116,9 @@ const RestaurantDashboard = () => {
 
   const fetchMenus = async () => {
     try {
-      const res = await api.get(`/api/menus?restaurantId=${user.id}`);
+  // If showing hidden menus, request only status=hidden so we display only hidden items
+  const qs = `restaurantId=${user.id}` + (showHiddenMenus ? `&status=hidden` : '');
+  const res = await api.get(`/api/menus?${qs}`);
       setMenus(res.data || []);
     } catch (err) {
       setMenus([]);
@@ -106,14 +130,40 @@ const RestaurantDashboard = () => {
       const allOrders = res.data;
       console.log('Orders từ API:', allOrders);
       console.log('Order đầu tiên:', allOrders[0]);
-  setPendingOrders(allOrders.filter(o => o.status === 'Pending'));
-  setOrders(allOrders.filter(o => o.status === 'Accepted'));
-  setDeliveringOrders(allOrders.filter(o => o.status === 'Delivering'));
+  const newPending = allOrders.filter(o => o.status === 'Pending');
+  const newAccepted = allOrders.filter(o => o.status === 'Accepted');
+  const newDelivering = allOrders.filter(o => o.status === 'Delivering');
+  setPendingOrders(newPending);
+  setOrders(newAccepted);
+  setDeliveringOrders(newDelivering);
       const doneOrders = allOrders.filter(o => o.status === 'Done');
       setHistory(doneOrders);
       
       // Tính toán doanh thu theo ngày
       calculateRevenue(doneOrders);
+
+      // Notify on new orders (skip on first load)
+      try {
+        const prev = prevOrderCountsRef.current;
+        if (!firstOrdersLoadRef.current) {
+          if (newPending.length > prev.pending) {
+            const diff = newPending.length - prev.pending;
+            try { toast.info(`Có ${diff} đơn chờ nhận mới`); } catch {}
+          }
+          if (newAccepted.length > prev.accepted) {
+            const diff = newAccepted.length - prev.accepted;
+            try { toast.success(`Có ${diff} đơn vừa được nhận`); } catch {}
+          }
+          if (newDelivering.length > prev.delivering) {
+            const diff = newDelivering.length - prev.delivering;
+            try { toast.info(`Có ${diff} đơn đang giao`); } catch {}
+          }
+        } else {
+          // mark first load done, don't notify
+          firstOrdersLoadRef.current = false;
+        }
+        prevOrderCountsRef.current = { pending: newPending.length, accepted: newAccepted.length, delivering: newDelivering.length };
+      } catch (err) { console.error('Notify error', err); }
     } catch (err) {
       console.error('Lỗi fetchOrders:', err);
       setPendingOrders([]);
@@ -224,6 +274,17 @@ const RestaurantDashboard = () => {
       try { toast.error('Thao tác thất bại'); } catch {}
     }
   };
+
+  const handleUnhideMenu = async (menuId) => {
+    try {
+      await api.put(`/api/menus/${menuId}`, { status: 'active' });
+      try { toast.success('Đã hiện món ăn'); } catch {}
+      fetchMenus();
+    } catch (err) {
+      console.error('Unhide menu error:', err);
+      try { toast.error('Không thể hiện món ăn'); } catch {}
+    }
+  };
   const handleSubmitMenu = async (e) => {
     e.preventDefault();
     setMenuLoading(true);
@@ -263,15 +324,80 @@ const RestaurantDashboard = () => {
   };
 
   return (
-  <div className="ff-page ff-container">
-      <div className="ff-row ff-gap-12 ff-mb-4">
-        <button onClick={()=>changeTab('revenue')} className={`ff-btn ${tab==='revenue' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>📊 Doanh thu</button>
-        <button onClick={()=>changeTab('menu')} className={`ff-btn ${tab==='menu' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Quản lý Menu</button>
-        <button onClick={()=>changeTab('pending')} className={`ff-btn ${tab==='pending' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn chờ nhận</button>
-  <button onClick={()=>changeTab('accepted')} className={`ff-btn ${tab==='accepted' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đã nhận</button>
-  <button onClick={()=>changeTab('delivering')} className={`ff-btn ${tab==='delivering' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Đơn đang giao</button>
-        <button onClick={()=>changeTab('history')} className={`ff-btn ${tab==='history' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>Lịch sử đơn đã giao</button>
-        <button onClick={()=>changeTab('store')} className={`ff-btn ${tab==='store' ? 'ff-btn--accent' : 'ff-btn--ghost'}`}>🏪 Thông tin cửa hàng</button>
+    <div className="ff-page ff-container">
+      {/* Header Section */}
+      <div className="restaurant-dashboard-header">
+        <div className="dashboard-title">
+          <h1>🍽️ Restaurant Dashboard</h1>
+          <p>Quản lý nhà hàng của bạn</p>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="restaurant-nav-tabs">
+        <button 
+          onClick={()=>changeTab('revenue')} 
+          className={`restaurant-tab ${tab==='revenue' ? 'restaurant-tab--active' : ''}`}
+        >
+          <div className="tab-icon">📊</div>
+          <span className="tab-text">Doanh thu</span>
+        </button>
+        
+        <button 
+          onClick={()=>changeTab('menu')} 
+          className={`restaurant-tab ${tab==='menu' ? 'restaurant-tab--active' : ''}`}
+        >
+          <div className="tab-icon">📋</div>
+          <span className="tab-text">Menu</span>
+        </button>
+        <button 
+          onClick={()=>changeTab('pending')} 
+          className={`restaurant-tab ${tab==='pending' ? 'restaurant-tab--active' : ''}`}
+          style={{position:'relative'}}
+        >
+          <div className="tab-icon">⏳</div>
+          <span className="tab-text">Chờ nhận</span>
+          {pendingOrders.length > 0 && (
+            <span className="tab-badge tab-badge--urgent">{pendingOrders.length}</span>
+          )}
+        </button>
+        <button 
+          onClick={()=>changeTab('accepted')} 
+          className={`restaurant-tab ${tab==='accepted' ? 'restaurant-tab--active' : ''}`}
+          style={{position:'relative'}}
+        >
+          <div className="tab-icon">✅</div>
+          <span className="tab-text">Đã nhận</span>
+          {orders.length > 0 && (
+            <span className="tab-badge tab-badge--success">{orders.length}</span>
+          )}
+        </button>
+                <button 
+          onClick={()=>changeTab('delivering')} 
+          className={`restaurant-tab ${tab==='delivering' ? 'restaurant-tab--active' : ''}`}
+          style={{position:'relative'}}
+        >
+          <div className="tab-icon">🚁</div>
+          <span className="tab-text">Đang giao</span>
+          {deliveringOrders.length > 0 && (
+            <span className="tab-badge tab-badge--warning">{deliveringOrders.length}</span>
+          )}
+        </button>
+        <button 
+          onClick={()=>changeTab('history')} 
+          className={`restaurant-tab ${tab==='history' ? 'restaurant-tab--active' : ''}`}
+        >
+          <div className="tab-icon">📜</div>
+          <span className="tab-text">Lịch sử</span>
+        </button>
+        
+        <button 
+          onClick={()=>changeTab('store')} 
+          className={`restaurant-tab ${tab==='store' ? 'restaurant-tab--active' : ''}`}
+        >
+          <div className="tab-icon">🏪</div>
+          <span className="tab-text">Cửa hàng</span>
+        </button>
       </div>
 
       {tab==='revenue' && (
@@ -358,7 +484,14 @@ const RestaurantDashboard = () => {
       {tab==='menu' && (
         <div>
           <div className="ff-toolbar">
-            <button onClick={openCreateMenu} className="ff-btn ff-btn--success">+ Thêm món</button>
+                <button onClick={openCreateMenu} className="ff-btn ff-btn--success">+ Thêm món</button>
+                <button
+                  onClick={() => setShowHiddenMenus(s => !s)}
+                  className={`ff-btn ff-btn--small ${showHiddenMenus ? 'ff-btn--accent' : 'ff-btn--ghost'}`}
+                  style={{ marginLeft: 12 }}
+                >
+                  {showHiddenMenus ? 'Đang hiển thị món ẩn' : 'Hiển thị món ẩn'}
+                </button>
           </div>
 
           <table className="ff-table ff-table--wide">
@@ -399,6 +532,9 @@ const RestaurantDashboard = () => {
                     >
                       {m.inStock !== false ? '❌ Hết hàng' : '✅ Còn hàng'}
                     </button>
+                    { (showHiddenMenus || m.status === 'hidden') && (
+                      <button onClick={()=>handleUnhideMenu(m.id)} className="ff-btn ff-btn--success ff-btn--small">Hiện</button>
+                    ) }
                   </td>
                 </tr>
               ))}
@@ -575,53 +711,143 @@ const RestaurantDashboard = () => {
       )}
 
       {tab==='store' && (
-        <div>
-          <h4>🏪 Thông tin cửa hàng</h4>
-          {storeLoading ? (
-            <div className="ff-muted">Đang tải...</div>
-          ) : !store ? (
-            <div className="ff-alert--warn">Chưa tìm thấy cửa hàng của bạn. Hãy liên hệ quản trị viên để được cấp quyền hoặc tạo cửa hàng.</div>
-          ) : (
-            <form className="ff-form ff-2col-xl" onSubmit={async (e)=>{
-              e.preventDefault();
-              const body = { name: storeForm.name, address: storeForm.address, description: storeForm.description, imageUrl: storeForm.imageUrl, promotion: storeForm.promotion };
-              await api.put(`/api/restaurants/${store.id}`, body);
-              await fetchStore();
-              try { toast.success('Đã cập nhật thông tin cửa hàng'); } catch {}
-            }}>
-              {/* Left: Upload + Large preview */}
-              <div className="ff-stack">
-                {storeForm.imageUrl ? (
-                  <img src={storeForm.imageUrl} alt="preview-store" className="ff-img--preview-xl" onError={(e)=>{e.currentTarget.style.display='none';}} />
-                ) : (
-                  <div className="ff-imgbox-xl">🏪</div>
-                )}
-                <input type="file" accept="image/*" onChange={async (e)=>{
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setUploadingStoreImage(true);
-                  try {
-                    const fd = new FormData();
-                    fd.append('image', file);
-                    const res = await api.post(`/api/upload?folder=restaurants`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                    setStoreForm(f=>({...f, imageUrl: res.data.url }));
-                  } finally { setUploadingStoreImage(false); }
-                }} />
-                {uploadingStoreImage && <span className="ff-muted">Đang tải ảnh...</span>}
+        <div className="restaurant-context">
+          <div className="restaurant-info-card">
+            <div className="restaurant-header">
+              <div className="restaurant-icon">🏪</div>
+              <div className="restaurant-badge">
+                <span className="badge-text">Thông tin cửa hàng</span>
               </div>
-
-              {/* Right: Fields in tidy grid */}
-              <div className="ff-formgrid">
-                <input className="ff-input" value={storeForm.name} onChange={(e)=>setStoreForm(f=>({...f, name: e.target.value}))} placeholder="Tên cửa hàng" required />
-                <input className="ff-input" value={storeForm.address} onChange={(e)=>setStoreForm(f=>({...f, address: e.target.value}))} placeholder="Địa chỉ" required />
-                <input className="ff-input" value={storeForm.promotion} onChange={(e)=>setStoreForm(f=>({...f, promotion: e.target.value}))} placeholder="Khuyến mãi (tuỳ chọn)" />
-                <textarea className="ff-textarea ff-colspan-2" rows={6} placeholder="Mô tả" value={storeForm.description} onChange={(e)=>setStoreForm(f=>({...f, description: e.target.value}))} />
-                <div className="ff-actions ff-colspan-2">
-                  <button type="submit" className="ff-btn ff-btn--success">Lưu thay đổi</button>
+            </div>
+            {storeLoading ? (
+              <div className="ff-muted" style={{textAlign: 'center', padding: '40px'}}>
+                ⏳ Đang tải thông tin...
+              </div>
+            ) : !store ? (
+              <div className="restaurant-not-found">
+                ⚠️ Chưa tìm thấy cửa hàng của bạn. Hãy liên hệ quản trị viên để được cấp quyền hoặc tạo cửa hàng.
+              </div>
+            ) : (
+              <form className="menu-form" onSubmit={async (e)=>{
+                e.preventDefault();
+                const body = { name: storeForm.name, address: storeForm.address, description: storeForm.description, imageUrl: storeForm.imageUrl, promotion: storeForm.promotion };
+                await api.put(`/api/restaurants/${store.id}`, body);
+                await fetchStore();
+                try { toast.success('Đã cập nhật thông tin cửa hàng'); } catch {}
+              }}>
+                <div className="form-left">
+                  <div className="section-title">
+                    🖼️ Ảnh cửa hàng
+                  </div>
+                  <div className="upload-section">
+                    <div className="upload-area">
+                      {storeForm.imageUrl ? (
+                        <div className="preview-section">
+                          <img src={storeForm.imageUrl} alt="preview-store" className="image-preview" onError={(e)=>{e.currentTarget.style.display='none';}} />
+                          <button type="button" className="remove-image-btn" onClick={() => setStoreForm(f=>({...f, imageUrl: ''}))}>
+                            ❌ Xóa ảnh
+                          </button>
+                          <label className="upload-label" htmlFor="store-image-upload" style={{marginTop: '12px', padding: '12px'}}>
+                            <div className="upload-content">
+                              <div className="upload-text">📷 Thay đổi ảnh</div>
+                            </div>
+                          </label>
+                        </div>
+                      ) : (
+                        <label className="upload-label" htmlFor="store-image-upload">
+                          <div className="upload-content">
+                            <div className="upload-icon">📷</div>
+                            <div className="upload-text">Tải lên ảnh cửa hàng</div>
+                            <div className="upload-subtext">Click để chọn ảnh</div>
+                          </div>
+                        </label>
+                      )}
+                      <input 
+                        id="store-image-upload"
+                        type="file" 
+                        accept="image/*" 
+                        className="file-input"
+                        onChange={async (e)=>{
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingStoreImage(true);
+                          try {
+                            const fd = new FormData();
+                            fd.append('image', file);
+                            const res = await api.post(`/api/upload?folder=restaurants`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                            setStoreForm(f=>({...f, imageUrl: res.data.url }));
+                          } finally { setUploadingStoreImage(false); }
+                        }} 
+                      />
+                      {uploadingStoreImage && (
+                        <div className="upload-status">
+                          <div className="loading-text">⏳ Đang tải ảnh...</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </form>
-          )}
+
+                <div className="form-right">
+                  <div className="section-title">
+                    ⚙️ Thông tin cơ bản
+                  </div>
+                  <div className="form-fields">
+                    <div className="field-group">
+                      <label className="field-label">🏪 Tên cửa hàng</label>
+                      <input 
+                        className="form-input" 
+                        value={storeForm.name} 
+                        onChange={(e)=>setStoreForm(f=>({...f, name: e.target.value}))} 
+                        placeholder="Nhập tên cửa hàng" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label">📍 Địa chỉ</label>
+                      <input 
+                        className="form-input" 
+                        value={storeForm.address} 
+                        onChange={(e)=>setStoreForm(f=>({...f, address: e.target.value}))} 
+                        placeholder="Nhập địa chỉ cửa hàng" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label">🎁 Khuyến mãi</label>
+                      <input 
+                        className="form-input" 
+                        value={storeForm.promotion} 
+                        onChange={(e)=>setStoreForm(f=>({...f, promotion: e.target.value}))} 
+                        placeholder="Thông tin khuyến mãi (tuỳ chọn)" 
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label">📝 Mô tả</label>
+                      <textarea 
+                        className="form-textarea" 
+                        rows={4} 
+                        placeholder="Mô tả về cửa hàng của bạn" 
+                        value={storeForm.description} 
+                        onChange={(e)=>setStoreForm(f=>({...f, description: e.target.value}))} 
+                      />
+                    </div>
+                    <div className="form-actions">
+                      <button type="button" className="btn-cancel" onClick={() => fetchStore()}>
+                        ❌ Hủy
+                      </button>
+                      <button type="submit" className="btn-submit">
+                        ✅ Lưu thay đổi
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
       {/* Modal thêm/sửa món - áp dụng pattern preview lớn + grid gọn */}

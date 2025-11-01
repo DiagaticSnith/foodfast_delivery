@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cartAPI } from '../api/api';
+import '../styles/Cart.css';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -28,33 +29,132 @@ const Cart = () => {
   };
 
   return (
-    <div style={{width:'100%',background:'#fff',padding:'32px 0'}}>
-      <h3 style={{color:'#ff4d4f',margin:'0 0 32px 48px',fontSize:28}}>Giỏ hàng của bạn</h3>
-      {cart.length === 0 ? (
-        <div style={{color: '#888',marginLeft:48}}>Chưa có món nào trong giỏ hàng.</div>
-      ) : (
-        <div style={{width:'90%',margin:'0 auto'}}>
-          {cart.map((item) => (
-            <div className="cart-item" key={item.id} style={{display:'flex',alignItems:'center',borderBottom:'1px solid #eee',padding:'24px 0',gap:32}}>
-              <img src={item.imageUrl} alt={item.name} style={{width:120,height:120,objectFit:'cover',borderRadius:12,marginRight:24}} />
-              <div style={{flex:1}}>
-                <strong style={{fontSize:20}}>{item.name}</strong>
-                <div style={{color:'#ff4d4f',fontWeight:'bold',margin:'12px 0',fontSize:18}}>{item.price.toLocaleString()}₫</div>
-                <input type="number" min={1} value={item.quantity} style={{width: 56, fontSize:16, padding:'4px 8px', margin:'8px 0'}} onChange={e => handleQuantity(item.id, Number(e.target.value))} />
-              </div>
-              <button style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:6,padding:'10px 20px',cursor:'pointer',fontSize:16}} onClick={async () => {
-                await cartAPI.removeFromCart(item.id);
-                setCart(cart.filter(i => i.id !== item.id));
-                setTotal(cart.filter(i => i.id !== item.id).reduce((sum, i) => sum + i.price * i.quantity, 0));
-              }}>Xóa</button>
-            </div>
-          ))}
-        </div>
-      )}
-      <div style={{width:'90%',margin:'32px auto 0',display:'flex',justifyContent:'flex-end',alignItems:'center'}}>
-        <div className="cart-total" style={{fontWeight:'bold',fontSize:22,color:'#ff4d4f',marginRight:32}}>Tổng cộng: {total.toLocaleString()}₫</div>
-  <button style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:8,padding:'16px 40px',fontSize:20,cursor:'pointer'}} onClick={() => navigate('/checkout', { state: { cart } })}>Đặt hàng</button>
+    <div className="cart-container">
+      <div className="cart-header">
+        <h1 className="cart-title">
+          <span className="cart-icon">🛒</span>
+          <span>Giỏ hàng của bạn</span>
+        </h1>
+        {cart.length > 0 && (
+          <div className="cart-count">
+            <span className="count-number">{cart.length}</span>
+            <span className="count-text">món</span>
+          </div>
+        )}
       </div>
+
+      {cart.length === 0 ? (
+        <div className="empty-cart">
+          <div className="empty-icon">😔</div>
+          <h3 className="empty-title">Giỏ hàng trống</h3>
+          <p className="empty-text">Hãy thêm món ăn yêu thích vào giỏ hàng!</p>
+          <button 
+            className="browse-menu-btn"
+            onClick={() => navigate('/')}
+          >
+            🍽️ Khám phá menu
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="cart-items">
+            {cart.map((item) => (
+              <div className="cart-item-card" key={item.id}>
+                <div className="item-image">
+                  <img 
+                    src={item.imageUrl || 'https://via.placeholder.com/120x120?text=Food'} 
+                    alt={item.name} 
+                  />
+                </div>
+                
+                <div className="item-details">
+                  <h3 className="item-name">{item.name}</h3>
+                  <div className="item-price">
+                    <span className="price-icon">💰</span>
+                    <span className="price-value">{item.price.toLocaleString()}₫</span>
+                  </div>
+                  
+                  <div className="quantity-controls">
+                    <label className="quantity-label">Số lượng:</label>
+                    <div className="quantity-input-group">
+                      <button 
+                        className="quantity-btn decrease"
+                        onClick={() => handleQuantity(item.id, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        value={item.quantity}
+                        className="quantity-input"
+                        onChange={e => handleQuantity(item.id, Number(e.target.value))}
+                      />
+                      <button 
+                        className="quantity-btn increase"
+                        onClick={() => handleQuantity(item.id, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="item-subtotal">
+                    <span>Thành tiền: </span>
+                    <span className="subtotal-value">
+                      {(item.price * item.quantity).toLocaleString()}₫
+                    </span>
+                  </div>
+                </div>
+                
+                <button 
+                  className="remove-btn"
+                  onClick={async () => {
+                    await cartAPI.removeFromCart(item.id);
+                    setCart(cart.filter(i => i.id !== item.id));
+                    setTotal(cart.filter(i => i.id !== item.id).reduce((sum, i) => sum + i.price * i.quantity, 0));
+                  }}
+                  title="Xóa khỏi giỏ hàng"
+                >
+                  <span className="remove-icon">🗑️</span>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="cart-summary">
+            <div className="summary-card">
+              <div className="summary-header">
+                <h3 className="summary-title">📊 Tổng kết đơn hàng</h3>
+              </div>
+              
+              <div className="summary-details">
+                <div className="summary-row">
+                  <span>Số lượng món:</span>
+                  <span>{cart.reduce((sum, item) => sum + item.quantity, 0)} món</span>
+                </div>
+                <div className="summary-row">
+                  <span>Tạm tính:</span>
+                  <span>{total.toLocaleString()}₫</span>
+                </div>
+                <div className="summary-row total">
+                  <span>Tổng cộng:</span>
+                  <span className="total-value">{total.toLocaleString()}₫</span>
+                </div>
+              </div>
+              
+              <button 
+                className="checkout-btn"
+                onClick={() => navigate('/checkout', { state: { cart } })}
+              >
+                <span className="checkout-icon">🚀</span>
+                <span>Tiến hành đặt hàng</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

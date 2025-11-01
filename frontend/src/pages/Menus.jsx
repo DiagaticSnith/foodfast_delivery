@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { menuAPI } from '../api/api';
 import MenuItem from '../components/MenuItem';
+import '../styles/Pagination.css';
 
 const PAGE_SIZE = 12;
 
@@ -14,6 +15,9 @@ const Menus = () => {
 
   // URL params -> local state
   const q = searchParams.get('q') || '';
+  const [searchInput, setSearchInput] = useState(q);
+  const [isComposing, setIsComposing] = useState(false);
+  useEffect(() => { setSearchInput(q); }, [q]);
   const sort = searchParams.get('sort') || 'default'; // default | price_asc | price_desc | name_asc | name_desc
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
 
@@ -40,12 +44,6 @@ const Menus = () => {
       case 'price_asc':
         list.sort((a, b) => Number(a.price) - Number(b.price));
         break;
-      case 'price_desc':
-        list.sort((a, b) => Number(b.price) - Number(a.price));
-        break;
-      case 'name_asc':
-        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        break;
       case 'name_desc':
         list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
         break;
@@ -64,6 +62,11 @@ const Menus = () => {
     if (value === undefined || value === null || value === '') next.delete(key); else next.set(key, String(value));
     if (key !== 'page') next.set('page', '1');
     setSearchParams(next);
+    
+    // Scroll to top when changing page
+    if (key === 'page') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -77,10 +80,14 @@ const Menus = () => {
         <input
           type="text"
           placeholder="Tìm món..."
-          value={q}
-          onChange={(e) => updateParam('q', e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={(e) => { setIsComposing(false); updateParam('q', e.target.value); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !isComposing) updateParam('q', searchInput); }}
           className="ff-input ff-input--min"
         />
+        <button className="ff-btn ff-btn--normal" onClick={() => updateParam('q', searchInput)}>Tìm</button>
         <select value={sort} onChange={(e) => updateParam('sort', e.target.value)} className="ff-select">
           <option value="default">Mặc định</option>
           <option value="price_asc">Giá tăng dần</option>
@@ -102,12 +109,79 @@ const Menus = () => {
       )}
 
       {totalPages > 1 && (
-        <div className="pagination">
-          <button onClick={() => updateParam('page', String(Math.max(1, pageSafe - 1)))} disabled={pageSafe === 1} className="pagebtn pagebtn--outline">Trước</button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button key={i} onClick={() => updateParam('page', String(i + 1))} className={`pagebtn ${pageSafe === i + 1 ? 'pagebtn--active' : 'pagebtn--ghost'}`}>{i + 1}</button>
-          ))}
-          <button onClick={() => updateParam('page', String(Math.min(totalPages, pageSafe + 1)))} disabled={pageSafe === totalPages} className="pagebtn pagebtn--outline">Sau</button>
+        <div className="modern-pagination">
+          <div className="pagination-info">
+            <span className="page-info">Trang {pageSafe} / {totalPages}</span>
+            <span className="item-info">({sortedMenus.length} món)</span>
+          </div>
+          
+          <div className="pagination-controls">
+            <button 
+              onClick={() => updateParam('page', String(Math.max(1, pageSafe - 1)))} 
+              disabled={pageSafe === 1} 
+              className="page-btn page-btn--prev"
+            >
+              <span className="btn-icon">←</span>
+              <span className="btn-text">Trước</span>
+            </button>
+            
+            <div className="page-numbers">
+              {(() => {
+                const pages = [];
+                const showPages = 5; // Show 5 page numbers max
+                let startPage = Math.max(1, pageSafe - 2);
+                let endPage = Math.min(totalPages, startPage + showPages - 1);
+                
+                if (endPage - startPage + 1 < showPages) {
+                  startPage = Math.max(1, endPage - showPages + 1);
+                }
+                
+                // First page
+                if (startPage > 1) {
+                  pages.push(
+                    <button key={1} onClick={() => updateParam('page', '1')} className="page-number">1</button>
+                  );
+                  if (startPage > 2) {
+                    pages.push(<span key="ellipsis1" className="page-ellipsis">...</span>);
+                  }
+                }
+                
+                // Page numbers
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(
+                    <button 
+                      key={i} 
+                      onClick={() => updateParam('page', String(i))} 
+                      className={`page-number ${pageSafe === i ? 'active' : ''}`}
+                    >
+                      {i}
+                    </button>
+                  );
+                }
+                
+                // Last page
+                if (endPage < totalPages) {
+                  if (endPage < totalPages - 1) {
+                    pages.push(<span key="ellipsis2" className="page-ellipsis">...</span>);
+                  }
+                  pages.push(
+                    <button key={totalPages} onClick={() => updateParam('page', String(totalPages))} className="page-number">{totalPages}</button>
+                  );
+                }
+                
+                return pages;
+              })()}
+            </div>
+            
+            <button 
+              onClick={() => updateParam('page', String(Math.min(totalPages, pageSafe + 1)))} 
+              disabled={pageSafe === totalPages} 
+              className="page-btn page-btn--next"
+            >
+              <span className="btn-text">Sau</span>
+              <span className="btn-icon">→</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cartAPI } from '../api/api';
 import { useToast } from './ToastProvider';
+import '../styles/MenuItem.css';
 
 const MenuItem = ({ item }) => {
   const navigate = useNavigate();
@@ -29,20 +30,49 @@ const MenuItem = ({ item }) => {
     }
   };
   return (
-    <div className="menu-item" style={{ cursor: 'pointer', position: 'relative', background:'#fff', borderRadius:12, boxShadow:'0 2px 8px #eee', padding:24, margin:12, minWidth:240, maxWidth:320, display:'inline-block', verticalAlign:'top' }} onClick={handleClick}>
-      {item.imageUrl && <img src={item.imageUrl} alt={item.name} style={{width: '100%', height: 140, objectFit: 'cover', borderRadius: 8, marginBottom: 12}} />}
-      <h4 style={{margin:'8px 0', color:'#ff4d4f', fontSize:20}}>{item.name}</h4>
-      <p style={{minHeight:40}}>{item.description || 'Món ăn nhanh, giao tận nơi!'}</p>
-      <div className="price" style={{fontWeight:'bold', color:'#ff4d4f', margin:'8px 0 16px'}}>
-        Giá: {item.price.toLocaleString()}₫
+    <div className="menu-item-card" onClick={handleClick}>
+      <div className="menu-item-image-container">
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt={item.name} className="menu-item-image" />
+        ) : (
+          <div className="menu-item-image-placeholder">
+            <span className="placeholder-icon">🍽️</span>
+          </div>
+        )}
+        <div className="menu-item-overlay">
+          <span className="view-details">👁️ Xem chi tiết</span>
+        </div>
       </div>
-  {item.inStock === false ? (
-    <button disabled style={{background:'#f3f4f6',color:'#9ca3af',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'not-allowed'}}>Hết hàng</button>
-  ) : item.status !== 'active' ? (
-    <button disabled style={{background:'#f3f4f6',color:'#9ca3af',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'not-allowed'}}>Không khả dụng</button>
-  ) : (
-    <button onClick={handleOrder} style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đặt món</button>
-  )}
+      
+      <div className="menu-item-content">
+        <h4 className="menu-item-title">{item.name}</h4>
+        <p className="menu-item-description">
+          {item.description || 'Món ăn nhanh, giao tận nơi!'}
+        </p>
+        
+        <div className="menu-item-footer">
+          <div className="menu-item-price">
+            <span className="price-label">💰</span>
+            <span className="price-value">{item.price.toLocaleString()}₫</span>
+          </div>
+          
+          <div className="menu-item-actions">
+            {item.inStock === false ? (
+              <button disabled className="menu-btn menu-btn--disabled">
+                ❌ Hết hàng
+              </button>
+            ) : item.status !== 'active' ? (
+              <button disabled className="menu-btn menu-btn--disabled">
+                🚫 Không khả dụng
+              </button>
+            ) : (
+              <button onClick={handleOrder} className="menu-btn menu-btn--primary">
+                🛒 Đặt món
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

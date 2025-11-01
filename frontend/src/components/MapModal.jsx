@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import '../styles/MapModal.css';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCGacFvdCZP5AZSaQZ10TRtG30RDXftb1U'; // Thay bằng key thật
 
@@ -123,29 +124,98 @@ const MapModal = ({ open, onClose, onConfirm }) => {
   if (!open) return null;
 
   return (
-    <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.3)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{background:'#fff',borderRadius:12,padding:24,minWidth:400,maxWidth:600,boxShadow:'0 2px 8px #aaa',position:'relative'}}>
-        <h3 style={{marginBottom:16}}>Chọn vị trí giao hàng</h3>
-        <div ref={mapRef} style={{ width: '100%', height: 320, borderRadius: 8, marginBottom: 16 }} />
-        <div style={{color:'#888',fontSize:14,marginBottom:8}}>Gõ để tìm địa chỉ (Places API New) hoặc nhấn vào bản đồ để chọn vị trí.</div>
-        <div style={{position:'relative'}}>
-          <input ref={inputRef} type="text" value={address} onChange={onChangeAddress} style={{width:'100%',padding:'10px',fontSize:16,borderRadius:6,border:'1px solid #eee'}} placeholder="Nhập địa chỉ..." />
+    <div className="map-modal-overlay">
+      <div className="map-modal-container">
+        {/* Header */}
+        <div className="map-modal-header">
+          <h3 className="modal-title">
+            <span className="modal-icon">🗺️</span>
+            <span>Chọn vị trí giao hàng</span>
+          </h3>
+          <button className="close-button" onClick={onClose}>
+            <span className="close-icon">✕</span>
+          </button>
+        </div>
+
+        {/* Map Container */}
+        <div className="map-container">
+          <div ref={mapRef} className="google-map" />
+          <div className="map-instructions">
+            <span className="instruction-icon">📍</span>
+            <span>Nhập địa chỉ hoặc nhấn vào bản đồ để chọn vị trí</span>
+          </div>
+        </div>
+
+        {/* Address Input */}
+        <div className="address-section">
+          <div className="input-container">
+            <input 
+              ref={inputRef} 
+              type="text" 
+              value={address} 
+              onChange={onChangeAddress} 
+              className="address-input"
+              placeholder="Nhập địa chỉ cụ thể..."
+            />
+            <div className="input-icon">
+              <span>🔍</span>
+            </div>
+          </div>
+          
+          {/* Suggestions Dropdown */}
           {(suggestions.length > 0 || loadingSuggestions) && (
-            <div style={{position:'absolute',top:'100%',left:0,right:0,background:'#fff',border:'1px solid #eee',borderTop:'none',zIndex:10,maxHeight:220,overflowY:'auto',borderBottomLeftRadius:6,borderBottomRightRadius:6}}>
-              {loadingSuggestions && <div style={{padding:10,fontSize:14,color:'#888'}}>Đang gợi ý...</div>}
+            <div className="suggestions-dropdown">
+              {loadingSuggestions && (
+                <div className="suggestion-item loading">
+                  <span className="loading-icon">⏳</span>
+                  <span>Đang tìm kiếm...</span>
+                </div>
+              )}
               {suggestions.map((s, i) => (
-                <div key={s.placeId+String(i)} onClick={()=>selectSuggestion(s)} style={{padding:'10px 12px',cursor:'pointer'}} onMouseDown={e=>e.preventDefault()}>
-                  {s.text}
+                <div 
+                  key={s.placeId+String(i)} 
+                  onClick={()=>selectSuggestion(s)} 
+                  className="suggestion-item"
+                  onMouseDown={e=>e.preventDefault()}
+                >
+                  <span className="suggestion-icon">📍</span>
+                  <span className="suggestion-text">{s.text}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
-        <div style={{display:'flex',justifyContent:'flex-end',gap:12}}>
-          <button onClick={onClose} style={{background:'#eee',color:'#333',border:'none',borderRadius:6,padding:'10px 24px',fontSize:16}}>Hủy</button>
-          <button onClick={() => { if(address) { console.log('Xác nhận địa chỉ:', address); onConfirm(address); } }} disabled={!address} style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:6,padding:'10px 24px',fontSize:16,cursor:address?'pointer':'not-allowed'}}>Xác nhận</button>
+
+        {/* Actions */}
+        <div className="modal-actions">
+          <button onClick={onClose} className="modal-btn modal-btn--cancel">
+            <span className="btn-icon">❌</span>
+            <span>Hủy bỏ</span>
+          </button>
+          <button 
+            onClick={() => { 
+              if(address) { 
+                console.log('Xác nhận địa chỉ:', address); 
+                onConfirm(address); 
+              } 
+            }} 
+            disabled={!address} 
+            className={`modal-btn modal-btn--confirm ${!address ? 'disabled' : ''}`}
+          >
+            <span className="btn-icon">✅</span>
+            <span>Xác nhận</span>
+          </button>
         </div>
-        {loading && <div style={{position:'absolute',top:0,left:0,right:0,bottom:0,background:'rgba(255,255,255,0.7)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>Đang tải bản đồ...</div>}
+
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="loading-overlay">
+            <div className="loading-content">
+              <div className="loading-spinner"></div>
+              <span className="loading-text">Đang tải bản đồ...</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

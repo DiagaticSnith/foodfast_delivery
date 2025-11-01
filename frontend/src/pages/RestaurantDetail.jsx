@@ -6,6 +6,8 @@ const RestaurantDetail = () => {
   const { id } = useParams();
   const [restaurant, setRestaurant] = useState(null);
   const [q, setQ] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [isComposing, setIsComposing] = useState(false);
   const [sort, setSort] = useState('default');
   const navigate = useNavigate();
 
@@ -67,6 +69,16 @@ const RestaurantDetail = () => {
           <h3 className="title-accent">Menu</h3>
           <div className="toolbar">
             <input className="ff-input ff-input--min" placeholder="Tìm món..." value={q} onChange={e=>setQ(e.target.value)} />
+            <input 
+              className="ff-input ff-input--min" 
+              placeholder="Tìm món..." 
+              value={searchInput} 
+              onChange={(e) => setSearchInput(e.target.value)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={(e) => { setIsComposing(false); setQ(e.target.value); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isComposing) setQ(searchInput); }}
+            />
+            <button className="ff-btn ff-btn--normal" onClick={() => setQ(searchInput)}>Tìm</button>
             <select className="ff-select" value={sort} onChange={e=>setSort(e.target.value)}>
               <option value="default">Sắp xếp</option>
               <option value="price-asc">Giá tăng dần</option>

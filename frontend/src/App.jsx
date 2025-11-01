@@ -27,6 +27,7 @@ import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCancel from './pages/CheckoutCancel';
 import DroneMonitoring from './pages/DroneMonitoring';
 import OrderTracking from './pages/OrderTracking';
+import MenuAdmin from './pages/MenuAdmin';
 
 
 function App() {
@@ -64,6 +65,7 @@ function App() {
           <Route path="/register" element={<Register setUser={setUser} />}/>
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/menus" element={<Menus />} />
+          <Route path="/admin/menus" element={<MenuAdmin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/restaurant-dashboard" element={<RestaurantDashboard />} />

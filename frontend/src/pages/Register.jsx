@@ -32,11 +32,11 @@ const Register = ({ setUser, backToLogin }) => {
           <div className="logo">FF</div>
           <div>
             <div className="title">FoodFast</div>
-            <div className="auth-subtitle">Tạo tài khoản để đặt món và nhận ưu đãi</div>
+            <div className="auth-subtitle">Tạo tài khoản để đặt món và nhận ưu đãi đặc biệt</div>
           </div>
         </div>
 
-        <h3>Đăng ký</h3>
+        <h3>Đăng ký tài khoản</h3>
 
         <input
           type="text"
@@ -85,7 +85,7 @@ const Register = ({ setUser, backToLogin }) => {
 
         {backToLogin && (
           <div className="auth-actions">
-            <div style={{fontSize:12,color:'#6b7280'}}>Đã có tài khoản?</div>
+            <div style={{fontSize:'0.9rem',color:'#6b7280',fontWeight:500}}>Đã có tài khoản?</div>
             <button type="button" className="auth-link" onClick={backToLogin}>Quay lại đăng nhập</button>
           </div>
         )}
