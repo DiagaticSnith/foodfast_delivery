@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import Modal from '../components/Modal';
+import { api } from '../api/api';
+import { useToast } from '../components/ToastProvider';
+import '../styles/admin.css';
 
 const UserInfo = ({ user, setUser }) => {
   const [loading, setLoading] = useState(false);
@@ -15,6 +19,8 @@ const UserInfo = ({ user, setUser }) => {
   const [restaurantDescription, setRestaurantDescription] = useState('');
   const [restaurantImageUrl, setRestaurantImageUrl] = useState('');
   const [restaurantPromotion, setRestaurantPromotion] = useState('');
+  const [uploadingRestaurantImage, setUploadingRestaurantImage] = useState(false);
+  const toast = useToast();
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -125,37 +131,56 @@ const UserInfo = ({ user, setUser }) => {
           Đăng ký trở thành đối tác nhà hàng
         </button>
       )}
-      {showRestaurantForm && (
-        <form onSubmit={handleSubmitRestaurant} style={{marginTop:24,background:'#f8f8f8',padding:20,borderRadius:10}}>
-          <h3 style={{color:'#189c38'}}>Thông tin nhà hàng</h3>
-          <div style={{marginBottom:10}}>
-            <b>Tên nhà hàng:</b>
-            <input type="text" value={restaurantName} onChange={e=>setRestaurantName(e.target.value)} required style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc',marginTop:4}} />
+      {/* Modal đăng ký đối tác nhà hàng */}
+      <Modal
+        open={showRestaurantForm}
+        title="Đăng ký đối tác nhà hàng"
+        onClose={()=>setShowRestaurantForm(false)}
+        footer={null}
+        size="xl"
+      >
+  <form onSubmit={handleSubmitRestaurant} className="ff-form ff-2col-xl">
+          {/* Left: Upload + Preview */}
+          <div className="ff-stack">
+            {restaurantImageUrl ? (
+              <img src={restaurantImageUrl} alt="preview-restaurant" className="ff-img--preview-xl" onError={(e)=>{e.currentTarget.style.display='none';}} />
+            ) : (
+              <div className="ff-imgbox-xl">📷</div>
+            )}
+            <input type="file" accept="image/*" onChange={async (e)=>{
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploadingRestaurantImage(true);
+              try {
+                const fd = new FormData();
+                fd.append('image', file);
+                const res = await api.post(`/api/upload?folder=restaurants`, fd, {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                setRestaurantImageUrl(res.data.url);
+              } catch (err) {
+                const m = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
+                try { toast.error(m); } catch {}
+              } finally {
+                setUploadingRestaurantImage(false);
+              }
+            }} />
+            {uploadingRestaurantImage && <span className="ff-muted">Đang tải ảnh...</span>}
           </div>
-          <div style={{marginBottom:10}}>
-            <b>Địa chỉ nhà hàng:</b>
-            <input type="text" value={restaurantAddress} onChange={e=>setRestaurantAddress(e.target.value)} required style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc',marginTop:4}} />
+
+          {/* Right: Fields in tidy grid */}
+          <div className="ff-formgrid">
+            <input className="ff-input" type="text" value={restaurantName} onChange={e=>setRestaurantName(e.target.value)} required placeholder="Tên nhà hàng" />
+            <input className="ff-input" type="text" value={restaurantAddress} onChange={e=>setRestaurantAddress(e.target.value)} required placeholder="Địa chỉ nhà hàng" />
+            <input className="ff-input" type="text" value={restaurantPromotion} onChange={e=>setRestaurantPromotion(e.target.value)} placeholder="Khuyến mãi (nếu có)" />
+            <textarea className="ff-textarea ff-colspan-2" value={restaurantDescription} onChange={e=>setRestaurantDescription(e.target.value)} placeholder="Mô tả" rows={6} />
+            <div className="ff-actions ff-colspan-2">
+              <button type="button" onClick={()=>setShowRestaurantForm(false)} className="ff-btn ff-btn--ghost">Hủy</button>
+              <button type="submit" disabled={loading||uploadingRestaurantImage} className="ff-btn ff-btn--success">Gửi đăng ký</button>
+            </div>
           </div>
-          <div style={{marginBottom:10}}>
-            <b>Mô tả:</b>
-            <textarea value={restaurantDescription} onChange={e=>setRestaurantDescription(e.target.value)} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc',marginTop:4}} />
-          </div>
-          <div style={{marginBottom:10}}>
-            <b>Ảnh đại diện (URL):</b>
-            <input type="text" value={restaurantImageUrl} onChange={e=>setRestaurantImageUrl(e.target.value)} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc',marginTop:4}} />
-          </div>
-          <div style={{marginBottom:10}}>
-            <b>Khuyến mãi (nếu có):</b>
-            <input type="text" value={restaurantPromotion} onChange={e=>setRestaurantPromotion(e.target.value)} style={{width:'100%',padding:8,borderRadius:6,border:'1px solid #ccc',marginTop:4}} />
-          </div>
-          <button type="submit" style={{background:'#189c38',color:'#fff',border:'none',borderRadius:8,padding:'8px 24px',fontWeight:600,fontSize:16,cursor:loading?'not-allowed':'pointer'}} disabled={loading}>
-            Gửi đăng ký
-          </button>
-          <button type="button" style={{marginLeft:12,background:'#ccc',color:'#333',border:'none',borderRadius:8,padding:'8px 24px',fontWeight:600,fontSize:16}} onClick={()=>setShowRestaurantForm(false)}>
-            Hủy
-          </button>
         </form>
-      )}
+      </Modal>
       {msg && <div style={{marginTop:16,color:msg.includes('thành công')?'#189c38':'#ff4d4f'}}>{msg}</div>}
     </div>
   );

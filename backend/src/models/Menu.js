@@ -9,6 +9,7 @@ const Menu = sequelize.define('Menu', {
   category: DataTypes.STRING,
   imageUrl: DataTypes.STRING,
   status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'active' },
+  inStock: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   restaurantId: {
     type: DataTypes.INTEGER,
     allowNull: false,

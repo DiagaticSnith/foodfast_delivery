@@ -63,21 +63,21 @@ const Restaurants = () => {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
-        <h2 style={{ margin: 0, color: '#ff4d4f' }}>🍽️ Tất cả nhà hàng</h2>
-        <button onClick={() => navigate('/')} style={{ background:'#eee', border:'1px solid #ddd', borderRadius:8, padding:'8px 14px', cursor:'pointer' }}>← Trang chủ</button>
+    <div className="site-container">
+      <div className="toolbar-spread">
+        <h2 className="title-accent" style={{margin:0}}>🍽️ Tất cả nhà hàng</h2>
+        <button onClick={() => navigate('/')} className="btn btn-ghost">← Trang chủ</button>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+      <div className="toolbar">
         <input
           type="text"
           placeholder="Tìm nhà hàng..."
           value={q}
           onChange={(e) => updateParam('q', e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', minWidth: 260 }}
+          className="ff-input ff-input--min"
         />
-        <select value={sort} onChange={(e) => updateParam('sort', e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd' }}>
+        <select value={sort} onChange={(e) => updateParam('sort', e.target.value)} className="ff-select">
           <option value="name_asc">Tên A → Z</option>
           <option value="name_desc">Tên Z → A</option>
           <option value="address_asc">Địa chỉ A → Z</option>
@@ -85,26 +85,24 @@ const Restaurants = () => {
         </select>
       </div>
 
-      {loading && <div style={{ padding: 24, color: '#666' }}>Đang tải...</div>}
+      {loading && <div className="muted" style={{ padding: 24 }}>Đang tải...</div>}
       {error && <div style={{ padding: 24, color: '#ff4d4f' }}>{error}</div>}
 
       {!loading && !error && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+        <div className="grid-auto-260">
           {paged.map(r => (
-            <div key={r.id} style={{ background: '#fff', borderRadius: 10, boxShadow: '0 2px 8px #eee', overflow: 'hidden' }}>
-              <RestaurantCard restaurant={r} />
-            </div>
+            <RestaurantCard key={r.id} restaurant={r} />
           ))}
         </div>
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '20px 0' }}>
-          <button onClick={() => updateParam('page', String(Math.max(1, pageSafe - 1)))} disabled={pageSafe === 1} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #eee', background: '#fff', cursor: pageSafe === 1 ? 'not-allowed' : 'pointer' }}>Trước</button>
+        <div className="pagination">
+          <button onClick={() => updateParam('page', String(Math.max(1, pageSafe - 1)))} disabled={pageSafe === 1} className="pagebtn pagebtn--outline">Trước</button>
           {Array.from({ length: totalPages }, (_, i) => (
-            <button key={i} onClick={() => updateParam('page', String(i + 1))} style={{ padding: '8px 12px', borderRadius: 6, border: 'none', background: pageSafe === i + 1 ? '#ff4d4f' : '#eee', color: pageSafe === i + 1 ? '#fff' : '#333', cursor: 'pointer' }}>{i + 1}</button>
+            <button key={i} onClick={() => updateParam('page', String(i + 1))} className={`pagebtn ${pageSafe === i + 1 ? 'pagebtn--active' : 'pagebtn--ghost'}`}>{i + 1}</button>
           ))}
-          <button onClick={() => updateParam('page', String(Math.min(totalPages, pageSafe + 1)))} disabled={pageSafe === totalPages} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #eee', background: '#fff', cursor: pageSafe === totalPages ? 'not-allowed' : 'pointer' }}>Sau</button>
+          <button onClick={() => updateParam('page', String(Math.min(totalPages, pageSafe + 1)))} disabled={pageSafe === totalPages} className="pagebtn pagebtn--outline">Sau</button>
         </div>
       )}
     </div>

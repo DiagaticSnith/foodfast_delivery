@@ -18,6 +18,8 @@ const checkoutSuccessRoutes = require('./src/routes/checkoutSuccessRoutes');
 const webhookRoutes = require('./src/routes/webhookRoutes');
 const orderDetailRoutes = require('./src/routes/orderDetailRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
+const reviewRoutes = require('./src/routes/reviewRoutes');
+const { startDroneDispatcher } = require('./src/utils/droneDispatcher');
 
 const app = express();
 
@@ -51,9 +53,14 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/order-details', orderDetailRoutes);
 app.use('/api/checkout', checkoutSuccessRoutes);
+// review routes (menus/:id/reviews, reviews/:id)
+app.use('/api', reviewRoutes);
 
 // Error handling
 app.use(errorHandler);
 
 const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+	console.log(`Server running on port ${PORT}`);
+	startDroneDispatcher({ intervalMs: 4000, burst: 5 });
+});

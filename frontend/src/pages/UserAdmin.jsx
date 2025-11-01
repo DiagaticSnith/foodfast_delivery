@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Modal from '../components/Modal';
+import { useToast } from '../components/ToastProvider';
 
 // Only allow changing to these roles
 const roles = ['user','restaurant'];
@@ -14,8 +15,12 @@ export default function UserAdmin(){
   const [editInfoOpen, setEditInfoOpen] = useState(false);
   const [editRoleOpen, setEditRoleOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [userReviews, setUserReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [infoForm, setInfoForm] = useState({ name:'', email:'', address:'', phoneNumber:'' });
   const [roleValue, setRoleValue] = useState('user');
+  const toast = useToast();
 
   const fetchUsers = async () => {
     const res = await axios.get('/api/users');
@@ -43,6 +48,37 @@ export default function UserAdmin(){
       setRoleValue('user');
     }
     setEditRoleOpen(true);
+  };
+
+  const openReviews = async (u) => {
+    setSelectedUser(u);
+    setReviewsOpen(true);
+    setUserReviews([]);
+    setReviewsLoading(true);
+    try {
+      const res = await axios.get(`/api/users/${u.id}/reviews`);
+      setUserReviews(res.data || []);
+    } catch (err) {
+      console.error(err);
+      try { toast && toast.error('Không thể tải bình luận'); } catch {}
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const changeReviewStatus = async (reviewId, status) => {
+    try {
+      await axios.put(`/api/reviews/${reviewId}/status`, { status });
+      // refresh
+      if (selectedUser) {
+        const res = await axios.get(`/api/users/${selectedUser.id}/reviews`);
+        setUserReviews(res.data || []);
+      }
+      try { toast && toast.success('Cập nhật trạng thái thành công'); } catch {}
+    } catch (err) {
+      console.error(err);
+      try { toast && toast.error('Cập nhật thất bại'); } catch {}
+    }
   };
 
   const submitInfo = async (e) => {
@@ -99,7 +135,8 @@ export default function UserAdmin(){
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{u.role}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>
                   <button onClick={()=>openEditInfo(u)} style={{background:'#1677ff',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',marginRight:6,cursor:'pointer'}}>Sửa thông tin</button>
-                  <button onClick={()=>openEditRole(u)} disabled={u.role==='admin'} style={{background:u.role==='admin'?'#ccc':'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',cursor:u.role==='admin'?'not-allowed':'pointer'}}>Đổi role</button>
+                  <button onClick={()=>openEditRole(u)} disabled={u.role==='admin'} style={{background:u.role==='admin'?'#ccc':'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',cursor:u.role==='admin'?'not-allowed':'pointer',marginRight:6}}>Đổi role</button>
+                  <button onClick={()=>openReviews(u)} style={{background:'#6b7280',color:'#fff',border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer'}}>Xem bình luận</button>
                 </td>
               </tr>
             ))}
@@ -128,6 +165,36 @@ export default function UserAdmin(){
             <button type="submit" style={{background:'#1677ff',color:'#fff',border:'none',borderRadius:8,padding:'8px 16px'}}>Lưu</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={reviewsOpen} title={`Bình luận - ${selectedUser?.username || ''}`} onClose={()=>{setReviewsOpen(false); setSelectedUser(null); setUserReviews([]);}} footer={null}>
+        <div style={{minWidth:420}}>
+          {reviewsLoading ? <div>Đang tải...</div> : (
+            userReviews.length === 0 ? <div className="ff-muted">Không có bình luận</div> : (
+              <div style={{display:'grid',gap:12}}>
+                {userReviews.map(r => (
+                  <div key={r.id} style={{padding:12,borderRadius:8,border:'1px solid #eee',background:'#fff'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div style={{fontWeight:700}}>{r.Menu?.name || '—'}</div>
+                      <div style={{fontSize:12}}>{new Date(r.createdAt).toLocaleString()}</div>
+                    </div>
+                    <div style={{marginTop:8}}>
+                      <div>Đánh giá: <b>{r.rating}</b></div>
+                      <div style={{marginTop:6}}>{r.comment || <i className="ff-muted">(không có nội dung)</i>}</div>
+                    </div>
+                    <div style={{marginTop:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div><span className={`ff-badge ${r.status==='hidden' ? 'ff-badge--warn' : 'ff-badge--ok'}`}>{r.status}</span></div>
+                      <div style={{display:'flex',gap:8}}>
+                        {r.status !== 'approved' && <button onClick={()=>changeReviewStatus(r.id,'approved')} className="ff-btn ff-btn--primary ff-btn--small">Hiện</button>}
+                        {r.status !== 'hidden' && <button onClick={()=>changeReviewStatus(r.id,'hidden')} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </div>
       </Modal>
 
       <Modal open={editRoleOpen} title={`Đổi role - ${selectedUser?.username || ''}`} onClose={()=>{setEditRoleOpen(false); setSelectedUser(null);}} footer={null}>

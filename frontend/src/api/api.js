@@ -31,7 +31,7 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
       } catch {}
       if (typeof window !== 'undefined') {
-        alert('Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.');
+        try { window.ffToast && window.ffToast.error('Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.'); } catch {}
         window.location.href = '/login';
       }
     }
@@ -57,6 +57,13 @@ export const cartAPI = {
   addToCart: (menuId, quantity = 1) => api.post('/api/cart/add', { menuId, quantity }),
   removeFromCart: (menuId) => api.post('/api/cart/remove', { menuId }),
   clearCart: () => api.post('/api/cart/clear'),
+};
+
+export const reviewAPI = {
+  getReviews: (menuId, params) => api.get(`/api/menus/${menuId}/reviews`, { params }),
+  postReview: (menuId, body) => api.post(`/api/menus/${menuId}/reviews`, body),
+  deleteReview: (id) => api.delete(`/api/reviews/${id}`),
+  setStatus: (id, status) => api.put(`/api/reviews/${id}/status`, { status }),
 };
 
 export const paymentAPI = {

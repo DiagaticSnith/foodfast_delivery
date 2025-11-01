@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import MapModal from '../components/MapModal';
 import { paymentAPI, orderAPI, userAPI } from '../api/api';
+import { useToast } from '../components/ToastProvider';
 
 const Checkout = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -15,11 +16,12 @@ const Checkout = () => {
   const userId = user.id || 1;
   const userEmail = user.email || '';
   const token = localStorage.getItem('token');
+  const toast = useToast();
 
   // Nếu giỏ hàng trống, thông báo và chuyển hướng về trang menu
   React.useEffect(() => {
     if (cartItems.length === 0) {
-      alert('Giỏ hàng trống. Vui lòng chọn món trước khi thanh toán!');
+      try { toast.info('Giỏ hàng trống. Vui lòng chọn món trước khi thanh toán!'); } catch {}
       setTimeout(() => {
         window.location.href = '/'; // hoặc '/menu' nếu có route menu riêng
       }, 2000);
@@ -111,7 +113,7 @@ const Checkout = () => {
               const res = await paymentAPI.createStripeSession(cartItems, address, userId, userEmail, token);
               window.location.href = res.data.url;
             } catch (err) {
-              alert('Lỗi tạo session Stripe: ' + err.message);
+              try { toast.error('Lỗi tạo session Stripe: ' + err.message); } catch {}
             }
             setLoading(false);
           }}

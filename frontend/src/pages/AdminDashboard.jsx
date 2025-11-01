@@ -6,16 +6,18 @@ import MenuAdmin from './MenuAdmin';
 import DroneAdmin from './DroneAdmin';
 import OrderAdmin from './OrderAdmin';
 import UserAdmin from './UserAdmin';
+import { useToast } from '../components/ToastProvider';
 
 const AdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState(searchParams.get('tab') || 'restaurant');
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.role !== 'admin') {
-      alert('Bạn không có quyền truy cập trang này!');
+      try { toast.error('Bạn không có quyền truy cập trang này!'); } catch {}
       navigate('/');
     }
   }, [navigate]);

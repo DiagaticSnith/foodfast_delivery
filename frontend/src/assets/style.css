@@ -145,3 +145,79 @@ body {
 .order-form button:hover {
   background: #d9363e;
 }
+
+/* Auth / Login / Register styles */
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* center relative to full viewport so card appears visually centered */
+  min-height: 100vh;
+  padding: 12px 24px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(16,24,40,0.08);
+  background: linear-gradient(180deg,#ffffff,#fffefc);
+  min-height: 480px; /* increased height as requested */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertically center content */
+  /* nudge upward so card sits visually higher on the viewport */
+  transform: translateY(-30%);
+}
+
+@media (max-width:480px){
+  .auth-card { transform: translateY(-4%); }
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.auth-brand .logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #ff4d4f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+}
+.auth-brand .title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+.auth-subtitle {color:#6b7280;font-size:0.92rem;margin-bottom:12px}
+.auth-actions{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.auth-link{background:none;border:none;color:#ff4d4f;cursor:pointer;text-decoration:underline;padding:0;font-size:0.95rem}
+.auth-cta{background:linear-gradient(90deg,#ff6b6b,#ff4d4f);box-shadow:0 6px 18px rgba(255,77,79,0.12);border:none;color:#fff;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600}
+.auth-cta:hover{opacity:0.95}
+
+@media (max-width:480px){
+  .auth-card{padding:18px}
+  .auth-brand .title{font-size:1rem}
+}
+
+/* Make form controls centered and constrained so left/right spacing looks symmetric */
+.order-form, .order-form * { box-sizing: border-box; }
+.order-form input,
+.order-form textarea,
+.order-form .auth-cta,
+.order-form .auth-link {
+  max-width: 360px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+.order-form input, .order-form textarea { padding: 10px 12px; }
+.order-form h3 { margin-top: 8px; }

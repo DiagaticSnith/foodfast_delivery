@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import '../styles/admin.css';
 import { DroneSimulator, generateRoute, SAMPLE_LOCATIONS } from '../utils/droneSimulator';
+import { useToast } from '../components/ToastProvider';
 
 const RestaurantDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -50,6 +51,7 @@ const RestaurantDashboard = () => {
     return `${time} ${date}`;
   };
 
+  const toast = useToast();
   // Reject modal
   const [rejectModal, setRejectModal] = useState({ open: false, orderId: null });
   const [rejectReason, setRejectReason] = useState('');
@@ -60,12 +62,12 @@ const RestaurantDashboard = () => {
   };
   const handleSubmitReject = async (e) => {
     e.preventDefault();
-    if (!rejectReason.trim()) return alert('Vui lòng nhập lý do từ chối!');
+    if (!rejectReason.trim()) { try { toast.error('Vui lòng nhập lý do từ chối!'); } catch {}; return; }
     await api.put(`/api/orders/${rejectModal.orderId}/reject`, { reason: rejectReason });
     setRejectModal({ open: false, orderId: null });
     setRejectReason('');
     fetchOrders();
-    alert('Đã từ chối đơn!');
+    try { toast.success('Đã từ chối đơn!'); } catch {}
   };
 
   // Fetch menu, orders, history
@@ -197,18 +199,30 @@ const RestaurantDashboard = () => {
   // CRUD menu (with modal + upload)
   const openCreateMenu = () => {
     setEditingMenuId(null);
-    setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });
+    setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '', inStock: true });
     setMenuModalOpen(true);
   };
   const openEditMenu = (m) => {
     setEditingMenuId(m.id);
-    setMenuForm({ name: m.name, price: m.price, description: m.description || '', category: m.category || '', imageUrl: m.imageUrl || '' });
+    setMenuForm({ name: m.name, price: m.price, description: m.description || '', category: m.category || '', imageUrl: m.imageUrl || '', inStock: m.inStock !== false });
     setMenuModalOpen(true);
   };
   const handleDeleteMenu = async (id) => {
     if (!window.confirm('Ẩn món ăn này?')) return;
     await api.delete(`/api/menus/${id}`);
     fetchMenus();
+  };
+
+  const handleToggleInStock = async (menu) => {
+    try {
+      const newVal = !(menu.inStock !== false);
+      await api.put(`/api/menus/${menu.id}`, { inStock: newVal });
+      fetchMenus();
+      try { toast.info(newVal ? 'Đánh dấu là còn hàng' : 'Đánh dấu là hết hàng'); } catch {}
+    } catch (err) {
+      console.error('Toggle inStock error:', err);
+      try { toast.error('Thao tác thất bại'); } catch {}
+    }
   };
   const handleSubmitMenu = async (e) => {
     e.preventDefault();
@@ -233,13 +247,13 @@ const RestaurantDashboard = () => {
   const handleAcceptOrder = async (orderId) => {
     await api.put(`/api/orders/${orderId}`, { status: 'Accepted' });
     fetchOrders();
-    alert('Đã nhận đơn, drone đang di chuyển tới nhà hàng!');
+    try { toast.success('Đã nhận đơn, drone đang di chuyển tới nhà hàng!'); } catch {}
   };
   // Gửi đơn (chuyển sang Đang giao)
   const handleSendOrder = async (orderId) => {
     await api.put(`/api/orders/${orderId}`, { status: 'Delivering' });
     fetchOrders();
-    alert('Đơn đang giao tới khách hàng!');
+    try { toast.info('Đơn đang giao tới khách hàng!'); } catch {}
   };
 
   // Change tab and update URL
@@ -378,7 +392,13 @@ const RestaurantDashboard = () => {
                   <td className="ff-td ff-td--preline" style={{maxWidth:240}}>{m.description}</td>
                   <td className="ff-td">
                     <button onClick={()=>openEditMenu(m)} className="ff-btn ff-btn--primary ff-btn--small" style={{marginRight:6}}>Sửa</button>
-                    <button onClick={()=>handleDeleteMenu(m.id)} className="ff-btn ff-btn--danger ff-btn--small">Ẩn</button>
+                    <button
+                      onClick={()=>handleToggleInStock(m)}
+                      className={`ff-btn ff-btn--small ${m.inStock !== false ? 'ff-btn--danger' : 'ff-btn--success'}`}
+                      style={{marginRight:6, display:'inline-flex', alignItems:'center', gap:6}}
+                    >
+                      {m.inStock !== false ? '❌ Hết hàng' : '✅ Còn hàng'}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -562,24 +582,20 @@ const RestaurantDashboard = () => {
           ) : !store ? (
             <div className="ff-alert--warn">Chưa tìm thấy cửa hàng của bạn. Hãy liên hệ quản trị viên để được cấp quyền hoặc tạo cửa hàng.</div>
           ) : (
-            <form className="ff-form" onSubmit={async (e)=>{
+            <form className="ff-form ff-2col-xl" onSubmit={async (e)=>{
               e.preventDefault();
               const body = { name: storeForm.name, address: storeForm.address, description: storeForm.description, imageUrl: storeForm.imageUrl, promotion: storeForm.promotion };
               await api.put(`/api/restaurants/${store.id}`, body);
               await fetchStore();
-              alert('Đã cập nhật thông tin cửa hàng');
+              try { toast.success('Đã cập nhật thông tin cửa hàng'); } catch {}
             }}>
-              <div className="ff-row">
-                <input className="ff-input" value={storeForm.name} onChange={(e)=>setStoreForm(f=>({...f, name: e.target.value}))} placeholder="Tên cửa hàng" required />
-              </div>
-              <div className="ff-row">
-                <input className="ff-input" value={storeForm.address} onChange={(e)=>setStoreForm(f=>({...f, address: e.target.value}))} placeholder="Địa chỉ" required />
-              </div>
-              <div className="ff-row">
-                <input className="ff-input" value={storeForm.promotion} onChange={(e)=>setStoreForm(f=>({...f, promotion: e.target.value}))} placeholder="Khuyến mãi (tuỳ chọn)" />
-              </div>
-              <div className="ff-row">
-                <input className="ff-input" value={storeForm.imageUrl} onChange={(e)=>setStoreForm(f=>({...f, imageUrl: e.target.value}))} placeholder="Ảnh cửa hàng (URL)" />
+              {/* Left: Upload + Large preview */}
+              <div className="ff-stack">
+                {storeForm.imageUrl ? (
+                  <img src={storeForm.imageUrl} alt="preview-store" className="ff-img--preview-xl" onError={(e)=>{e.currentTarget.style.display='none';}} />
+                ) : (
+                  <div className="ff-imgbox-xl">🏪</div>
+                )}
                 <input type="file" accept="image/*" onChange={async (e)=>{
                   const file = e.target.files?.[0];
                   if (!file) return;
@@ -593,63 +609,67 @@ const RestaurantDashboard = () => {
                 }} />
                 {uploadingStoreImage && <span className="ff-muted">Đang tải ảnh...</span>}
               </div>
-              {storeForm.imageUrl && (
-                <div className="ff-row ff-align-center">
-                  <img src={storeForm.imageUrl} alt="preview-store" className="ff-img--preview" onError={(e)=>{e.currentTarget.style.display='none';}} />
-                  <span className="ff-muted">Preview</span>
+
+              {/* Right: Fields in tidy grid */}
+              <div className="ff-formgrid">
+                <input className="ff-input" value={storeForm.name} onChange={(e)=>setStoreForm(f=>({...f, name: e.target.value}))} placeholder="Tên cửa hàng" required />
+                <input className="ff-input" value={storeForm.address} onChange={(e)=>setStoreForm(f=>({...f, address: e.target.value}))} placeholder="Địa chỉ" required />
+                <input className="ff-input" value={storeForm.promotion} onChange={(e)=>setStoreForm(f=>({...f, promotion: e.target.value}))} placeholder="Khuyến mãi (tuỳ chọn)" />
+                <textarea className="ff-textarea ff-colspan-2" rows={6} placeholder="Mô tả" value={storeForm.description} onChange={(e)=>setStoreForm(f=>({...f, description: e.target.value}))} />
+                <div className="ff-actions ff-colspan-2">
+                  <button type="submit" className="ff-btn ff-btn--success">Lưu thay đổi</button>
                 </div>
-              )}
-              <textarea className="ff-textarea" rows={4} placeholder="Mô tả" value={storeForm.description} onChange={(e)=>setStoreForm(f=>({...f, description: e.target.value}))} />
-              <div className="ff-actions">
-                <button type="submit" className="ff-btn ff-btn--success">Lưu thay đổi</button>
               </div>
             </form>
           )}
         </div>
       )}
-      {/* Modal thêm/sửa món */}
-  <Modal open={menuModalOpen} title={editingMenuId ? 'Cập nhật món' : 'Thêm món mới'} onClose={()=>{ setMenuModalOpen(false); setEditingMenuId(null); }} footer={null} size="lg">
-        <form onSubmit={handleSubmitMenu} className="ff-form ff-2col" style={{gap:16}}>
+      {/* Modal thêm/sửa món - áp dụng pattern preview lớn + grid gọn */}
+      <Modal open={menuModalOpen} title={editingMenuId ? 'Cập nhật món' : 'Thêm món mới'} onClose={()=>{ setMenuModalOpen(false); setEditingMenuId(null); }} footer={null} size="xl">
+        <form onSubmit={handleSubmitMenu} className="ff-form ff-2col-xl">
           {/* Left: Upload + Preview */}
-          <div>
-            <div className="ff-row" style={{flexDirection:'column', gap:12}}>
-              <input type="file" accept="image/*" onChange={async (e)=>{
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setUploadingMenuImage(true);
-                try {
-                  const fd = new FormData();
-                  fd.append('image', file);
-                  const res = await api.post(`/api/upload?folder=menus`, fd, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                  });
-                  setMenuForm(f=>({...f, imageUrl: res.data.url }));
-                } catch (err) {
-                  const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
-                  alert(msg);
-                } finally {
-                  setUploadingMenuImage(false);
-                }
-              }} />
-              {uploadingMenuImage && <span className="ff-muted">Đang tải ảnh...</span>}
-              {menuForm.imageUrl && (
-                <img src={menuForm.imageUrl} alt="preview-menu" className="ff-img--preview-lg" onError={(e)=>{e.currentTarget.style.display='none';}} />
-              )}
-            </div>
+          <div className="ff-stack">
+            {menuForm.imageUrl ? (
+              <img src={menuForm.imageUrl} alt="preview-menu" className="ff-img--preview-xl" onError={(e)=>{e.currentTarget.style.display='none';}} />
+            ) : (
+              <div className="ff-imgbox-xl">🍽️</div>
+            )}
+            <input type="file" accept="image/*" onChange={async (e)=>{
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploadingMenuImage(true);
+              try {
+                const fd = new FormData();
+                fd.append('image', file);
+                const res = await api.post(`/api/upload?folder=menus`, fd, {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                setMenuForm(f=>({...f, imageUrl: res.data.url }));
+              } catch (err) {
+                const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
+                try { toast.error(msg); } catch {}
+              } finally {
+                setUploadingMenuImage(false);
+              }
+            }} />
+            {uploadingMenuImage && <span className="ff-muted">Đang tải ảnh...</span>}
           </div>
-          {/* Right: Fields */}
-          <div>
-            <div className="ff-row">
-              <input className="ff-input" value={menuForm.name} onChange={e=>setMenuForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required style={{flex:1}} />
-              <input className="ff-input" value={menuForm.price} onChange={e=>setMenuForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required style={{width:160}} />
-            </div>
-            <div className="ff-row">
-              <input className="ff-input" value={menuForm.category} onChange={e=>setMenuForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" style={{flex:1}} />
-              <input className="ff-input" value={menuForm.imageUrl} onChange={e=>setMenuForm(f=>({...f,imageUrl:e.target.value}))} placeholder="Ảnh (URL)" style={{flex:1}} />
-            </div>
-            <textarea className="ff-textarea" value={menuForm.description} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" rows={4} />
-            <div className="ff-actions">
-              {editingMenuId && <button type="button" onClick={()=>{setEditingMenuId(null); setMenuForm({ name: '', price: '', description: '', category: '', imageUrl: '' });}} className="ff-btn ff-btn--ghost">Hủy sửa</button>}
+          {/* Right: Fields in tidy grid */}
+          <div className="ff-formgrid">
+            <input className="ff-input" value={menuForm.name} onChange={e=>setMenuForm(f=>({...f,name:e.target.value}))} placeholder="Tên món" required />
+            <input className="ff-input" value={menuForm.price} onChange={e=>setMenuForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required />
+            <input className="ff-input" value={menuForm.category} onChange={e=>setMenuForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" />
+            <textarea className="ff-textarea ff-colspan-2" value={menuForm.description} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả" rows={6} />
+            {/* inStock is managed from the table row toggle; removed the checkbox from the edit modal per UX */}
+            <div className="ff-actions ff-colspan-2">
+              {editingMenuId && (
+                <button type="button" onClick={async ()=>{
+                  // reuse existing delete handler which asks for confirmation
+                  await handleDeleteMenu(editingMenuId);
+                  setMenuModalOpen(false);
+                  setEditingMenuId(null);
+                }} className="ff-btn ff-btn--danger" style={{marginRight:8}}>Ẩn</button>
+              )}
               <button type="submit" disabled={menuLoading||uploadingMenuImage} className="ff-btn ff-btn--success">{editingMenuId ? 'Cập nhật món' : 'Thêm món'}</button>
             </div>
           </div>

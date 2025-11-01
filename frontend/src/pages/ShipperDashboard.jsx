@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/api';
+import { useToast } from '../components/ToastProvider';
 
 const ShipperDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -12,6 +13,7 @@ const ShipperDashboard = () => {
   const [claiming, setClaiming] = useState({});
   const [tab, setTab] = useState('pending');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const toast = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +54,7 @@ const ShipperDashboard = () => {
             <div><b>Tổng tiền:</b> {Number(order.total).toLocaleString()}₫</div>
             <button style={{marginTop:8,background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'8px 20px',fontWeight:500,cursor:'pointer'}} onClick={async () => {
               const res = await api.get(`/api/order-details/${order.id}`);
-              alert(res.data.map(item => `${item.Menu?.name} x${item.quantity} - ${item.price.toLocaleString()}₫`).join('\n'));
+              try { toast.info(res.data.map(item => `${item.Menu?.name} x${item.quantity} - ${item.price.toLocaleString()}₫`).join('\n'), { duration: 4000 }); } catch {}
             }}>Xem chi tiết món</button>
             <button
               style={{marginTop:8,marginLeft:12,background:'#ff9800',color:'#fff',border:'none',borderRadius:6,padding:'8px 20px',fontWeight:500,cursor:updating[order.id]?'not-allowed':'pointer'}}
@@ -90,7 +92,7 @@ const ShipperDashboard = () => {
             <div><b>Tổng tiền:</b> {Number(order.total).toLocaleString()}₫</div>
             <button style={{marginTop:8,background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'8px 20px',fontWeight:500,cursor:'pointer'}} onClick={async () => {
               const res = await api.get(`/api/order-details/${order.id}`);
-              alert(res.data.map(item => `${item.Menu?.name} x${item.quantity} - ${item.price.toLocaleString()}₫`).join('\n'));
+              try { toast.info(res.data.map(item => `${item.Menu?.name} x${item.quantity} - ${item.price.toLocaleString()}₫`).join('\n'), { duration: 4000 }); } catch {}
             }}>Xem chi tiết món</button>
           </div>
         ))}
@@ -107,7 +109,7 @@ const ShipperDashboard = () => {
               style={{marginTop:8,background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'8px 20px',fontWeight:500,cursor:claiming[order.id]?'not-allowed':'pointer'}}
               disabled={claiming[order.id] || myDrones.length === 0}
               onClick={async () => {
-                if (myDrones.length === 0) { alert('Bạn chưa có drone để nhận đơn!'); return; }
+                if (myDrones.length === 0) { try { toast.warn('Bạn chưa có drone để nhận đơn!'); } catch {}; return; }
                 setClaiming(c => ({...c, [order.id]: true}));
                 // Gán drone đầu tiên của shipper cho đơn này
                 await api.put(`/api/orders/${order.id}/assign-drone`, { droneId: myDrones[0].id });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { menuAPI, api } from '../api/api';
 import MenuItem from '../components/MenuItem';
@@ -26,58 +26,50 @@ const Home = () => {
 	}, []);
 
 		const restaurantsToShow = restaurants.slice(0, 4);
-		const menusToShow = menus.slice(0, 8);
+		const menusToShow = useMemo(() => {
+			const copy = [...menus];
+			for (let i = copy.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[copy[i], copy[j]] = [copy[j], copy[i]];
+			}
+			return copy.slice(0, 8);
+		}, [menus]);
 
 	return (
-		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px' }}>
+		<div className="site-container">
 			{/* Restaurants section */}
-			<div style={{ marginTop: 16, marginBottom: 32 }}>
-				<div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-					<h2 style={{ margin: '8px 0', color: '#ff4d4f' }}>🍽️ Nhà hàng nổi bật</h2>
-											<button
-												onClick={() => navigate('/restaurants')}
-												style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontWeight: 600 }}
-											>
-												Xem tất cả nhà hàng
-											</button>
+			<div className="section">
+				<div className="section-header">
+					<h2 className="title-accent">🍽️ Nhà hàng nổi bật</h2>
+					<button onClick={() => navigate('/restaurants')} className="btn btn-outline">Xem tất cả nhà hàng</button>
 				</div>
 				{restaurants.length === 0 ? (
-					<div style={{ color: '#888' }}>Chưa có nhà hàng nào.</div>
+					<div className="muted">Chưa có nhà hàng nào.</div>
 				) : (
-					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+					<div className="grid-4">
 						{restaurantsToShow.map(r => (
-							<div key={r.id} style={{ background: '#fff', borderRadius: 10, boxShadow: '0 2px 8px #eee', overflow: 'hidden' }}>
-								<RestaurantCard restaurant={r} />
-							</div>
+							<RestaurantCard key={r.id} restaurant={r} />
 						))}
 					</div>
 				)}
-								{/* Removed duplicate center button for restaurants to avoid confusion */}
 			</div>
 
 			{/* Menus section */}
-			<div style={{ marginTop: 16, marginBottom: 16 }}>
-				<div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-					<h2 style={{ margin: '8px 0', color: '#ff4d4f' }}>🥡 Món ngon hôm nay</h2>
-											<button
-												onClick={() => navigate('/menus')}
-												style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontWeight: 600 }}
-											>
-												Xem tất cả món
-											</button>
+			<div className="section">
+				<div className="section-header">
+					<h2 className="title-accent">🥡 Món ngon hôm nay</h2>
+					<button onClick={() => navigate('/menus')} className="btn btn-outline">Xem tất cả món</button>
 				</div>
 
 				{menus.length === 0 ? (
-					<div style={{ color: '#888' }}>Chưa có món ăn nào.</div>
+					<div className="muted">Chưa có món ăn nào.</div>
 				) : (
-					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+					<div className="grid-auto-240">
 						{menusToShow.map(menu => (
 							<MenuItem key={menu.id} item={menu} />
 						))}
 					</div>
 				)}
-
-								{/* Removed duplicate center button for menus to avoid confusion */}
 			</div>
 		</div>
 	);

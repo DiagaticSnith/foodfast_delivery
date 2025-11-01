@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { setAuthToken } from './api/api';
 import './assets/style.css';
 import './styles/admin.css';
+import './styles/pages.css';
 import './styles/modal.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
+import { ToastProvider } from './components/ToastProvider';
 import Header from './components/Header';
 import Home from './pages/Home';
 import UserDashboard from './pages/UserDashboard';
@@ -41,9 +43,10 @@ function App() {
 
   return (
     <CartProvider>
-      <Router>
-        <Header user={user} setUser={setUser} />
-        <Routes>
+      <ToastProvider>
+        <Router>
+          <Header user={user} setUser={setUser} />
+          <Routes>
           {/* Trang chủ sẽ tự động điều hướng về dashboard phù hợp nếu đã đăng nhập */}
           <Route path="/" element={
             user ? (
@@ -72,7 +75,8 @@ function App() {
           <Route path="/drone-monitoring" element={<DroneMonitoring />} />
           <Route path="/order-tracking" element={<OrderTracking />} />
         </Routes>
-      </Router>
+        </Router>
+      </ToastProvider>
     </CartProvider>
   );
 }

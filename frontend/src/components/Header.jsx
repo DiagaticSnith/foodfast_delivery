@@ -13,8 +13,8 @@ const Header = ({ user, setUser }) => {
 	<header className="header">
 		<nav className="navbar">
 			<Link className="navbar-brand" to={homePath}>Fastfood Delivery</Link>
-			<div>
-				{(!user || user.role !== 'admin') && (
+            <div>
+                {(!user || (user.role !== 'admin' && user.role !== 'restaurant')) && (
 					<>
 						<Link to="/cart">Giỏ hàng</Link>
 						<Link to="/order-history">Lịch sử đơn</Link>

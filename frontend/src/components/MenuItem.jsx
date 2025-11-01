@@ -1,27 +1,31 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cartAPI } from '../api/api';
+import { useToast } from './ToastProvider';
 
 const MenuItem = ({ item }) => {
   const navigate = useNavigate();
   const [msg, setMsg] = useState('');
   const user = JSON.parse(localStorage.getItem('user'));
+  const toast = useToast();
   const handleClick = () => {
     navigate(`/menu/${item.id}`);
   };
   const handleOrder = async (e) => {
     e.stopPropagation();
     if (!user) {
-      navigate('/login');
+      try { toast.info('Vui lòng đăng nhập để đặt món'); } catch {}
+      return;
+    }
+    if (item.inStock === false || item.status !== 'active') {
+      try { toast.info('Món hiện không thể đặt (hết hàng hoặc đã ẩn)'); } catch {}
       return;
     }
     try {
       await cartAPI.addToCart(item.id, 1);
-      setMsg('Đã thêm vào giỏ hàng!');
-      setTimeout(() => setMsg(''), 2000);
+      try { toast.success('Đã thêm vào giỏ hàng!'); } catch {}
     } catch (err) {
-      setMsg('Có lỗi khi thêm vào giỏ hàng!');
-      setTimeout(() => setMsg(''), 2000);
+      try { toast.error('Có lỗi khi thêm vào giỏ hàng!'); } catch {}
     }
   };
   return (
@@ -32,8 +36,13 @@ const MenuItem = ({ item }) => {
       <div className="price" style={{fontWeight:'bold', color:'#ff4d4f', margin:'8px 0 16px'}}>
         Giá: {item.price.toLocaleString()}₫
       </div>
-      <button onClick={handleOrder} style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đặt món</button>
-      {msg && <div style={{position:'absolute',top:8,right:8,color:'#52c41a',background:'#fff',padding:'4px 12px',borderRadius:8,boxShadow:'0 2px 8px #eee',fontWeight:'bold'}}>{msg}</div>}
+  {item.inStock === false ? (
+    <button disabled style={{background:'#f3f4f6',color:'#9ca3af',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'not-allowed'}}>Hết hàng</button>
+  ) : item.status !== 'active' ? (
+    <button disabled style={{background:'#f3f4f6',color:'#9ca3af',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'not-allowed'}}>Không khả dụng</button>
+  ) : (
+    <button onClick={handleOrder} style={{background:'#ff4d4f',color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:600,fontSize:16,cursor:'pointer'}}>Đặt món</button>
+  )}
     </div>
   );
 };

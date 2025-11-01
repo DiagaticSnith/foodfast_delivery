@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/api';
+import { useToast } from '../components/ToastProvider';
 import Modal from '../components/Modal';
 import '../styles/admin.css';
 
@@ -14,6 +15,7 @@ const MenuAdmin = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const toast = useToast();
   const pageSize = 5;
 
   const fetchMenus = async () => {
@@ -41,7 +43,8 @@ const MenuAdmin = () => {
       description: m.description,
       category: m.category,
       imageUrl: m.imageUrl,
-      restaurantId: m.restaurantId
+      restaurantId: m.restaurantId,
+      inStock: m.inStock !== false
     });
     setOpenModal(true);
   };
@@ -108,7 +111,7 @@ const MenuAdmin = () => {
                   setForm(f=>({...f, imageUrl: res.data.url }));
                 } catch (err) {
                   const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
-                  alert(msg);
+                  try { toast.error(msg); } catch {}
                 } finally {
                   setUploadingImage(false);
                 }
@@ -126,7 +129,6 @@ const MenuAdmin = () => {
               <input className="ff-input ff-flex-1" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="Giá" type="number" min={0} required />
               <input className="ff-input ff-flex-1" value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Phân loại" />
             </div>
-            <input className="ff-input" value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))} placeholder="Ảnh (URL)" />
             <select className="ff-select" value={form.restaurantId} onChange={e=>setForm(f=>({...f,restaurantId:e.target.value}))} required>
               <option value="">Chọn nhà hàng</option>
               {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}

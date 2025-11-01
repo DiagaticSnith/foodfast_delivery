@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/api';
 import { DroneSimulator, generateRoute, SAMPLE_LOCATIONS } from '../utils/droneSimulator';
 import StatusBadge from '../components/StatusBadge';
+import { useToast } from '../components/ToastProvider';
 
 const OrderTracking = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +15,7 @@ const OrderTracking = () => {
   const [error, setError] = useState(null);
   const [dronePosition, setDronePosition] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const toast = useToast();
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const droneMarkerRef = useRef(null);
@@ -363,7 +365,7 @@ const OrderTracking = () => {
       }, 500);
     } catch (err) {
       console.error('❌ Error updating order status:', err.response?.data || err.message);
-      alert('Lỗi khi cập nhật trạng thái đơn hàng: ' + (err.response?.data?.message || err.message));
+      try { toast.error('Lỗi khi cập nhật trạng thái đơn hàng: ' + (err.response?.data?.message || err.message)); } catch {}
     }
   };
 

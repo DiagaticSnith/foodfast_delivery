@@ -4,14 +4,18 @@ const { Op } = require('sequelize');
 exports.getMenus = async (req, res) => {
   try {
     const { search, restaurantId, includeHidden, status } = req.query;
+    const includeHiddenFlag = includeHidden === 'true' || includeHidden === true;
     let where = {};
     if (status) {
       where.status = status;
-    } else if (!includeHidden) {
+    } else if (!includeHiddenFlag) {
       where.status = 'active';
     }
     if (restaurantId) {
-      where.restaurantId = restaurantId;
+      const restaurantIdNum = Number(restaurantId);
+      if (!Number.isNaN(restaurantIdNum)) {
+        where.restaurantId = restaurantIdNum;
+      }
     }
     if (search && search.trim() !== '') {
       where.name = { [Op.like]: `%${search}%` };
@@ -19,7 +23,9 @@ exports.getMenus = async (req, res) => {
     const menus = await Menu.findAll({ where });
     res.json(menus);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error('menuController.getMenus error:', err);
+    // unexpected server error
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -48,6 +54,7 @@ exports.getMenuDetail = async (req, res) => {
     });
     res.json({ menu, related });
   } catch (err) {
+    console.error('menuController.getMenuDetail error:', err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -59,6 +66,7 @@ exports.updateMenu = async (req, res) => {
     await menu.update(req.body);
     res.json(menu);
   } catch (err) {
+    console.error('menuController.updateMenu error:', err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -71,6 +79,7 @@ exports.deleteMenu = async (req, res) => {
     await menu.update({ status: 'hidden' });
     res.json({ message: 'Hidden' });
   } catch (err) {
+    console.error('menuController.deleteMenu error:', err);
     res.status(400).json({ message: err.message });
   }
 };

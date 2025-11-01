@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import StatusBadge from '../components/StatusBadge';
 import axios from 'axios';
 import Modal from '../components/Modal';
+import { useToast } from '../components/ToastProvider';
 
 const DroneAdmin = () => {
   const [drones, setDrones] = useState([]);
@@ -12,6 +13,7 @@ const DroneAdmin = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
+  const toast = useToast();
 
   const fetchDrones = async () => {
     const res = await axios.get('/api/drones');
@@ -117,7 +119,7 @@ const DroneAdmin = () => {
                 <td style={{padding:'10px 8px',textAlign:'center'}}><StatusBadge status={d.status} /></td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>{d.launchpad}</td>
                 <td style={{padding:'10px 8px',textAlign:'center'}}>
-                  <button onClick={()=>alert('Chức năng xem chi tiết drone và các đơn hàng sẽ được bổ sung!')} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>
+                  <button onClick={()=>{ try { toast.info('Chức năng xem chi tiết drone và các đơn hàng sẽ được bổ sung!'); } catch {} }} style={{background:'#189c38',color:'#fff',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:500,cursor:'pointer'}}>Xem chi tiết</button>
                 </td>
               </tr>
             ))}
