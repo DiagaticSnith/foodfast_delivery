@@ -60,7 +60,7 @@ jobs:
           sudo apt-get install -y default-mysql-client
         shell: bash
 
-      - name: Debug: docker/service status
+      - name: "Debug: docker/service status"
         run: |
           set -x
           echo "== Docker ps =="
@@ -75,7 +75,7 @@ jobs:
           fi
         shell: bash
 
-      - name: Wait for MySQL (mysqladmin)
+      - name: "Wait for MySQL (mysqladmin)"
         run: |
           set -x
           echo "Waiting for MySQL to be ready on mysql:3306 using mysqladmin (up to 120s)..."
