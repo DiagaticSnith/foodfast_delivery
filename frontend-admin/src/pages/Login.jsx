@@ -1,0 +1,82 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { userAPI, setAuthToken } from '../api/api';
+import { useToast } from '../components/ToastProvider';
+
+const Login = ({ setUser }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await userAPI.login({ username, password });
+      // Only allow admin users to sign in to the admin app
+      const user = res.data.user;
+      if (user?.role !== 'admin') {
+        try { toast.error('Tài khoản này không có quyền truy cập trang quản trị.'); } catch {}
+        // ensure no token or user data is stored for non-admins
+        setAuthToken(null);
+        return;
+      }
+
+      // admin: persist token and user
+      setAuthToken(res.data.token);
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', res.data.token);
+      try { toast.success('Đăng nhập thành công!'); } catch {}
+      navigate('/admin-dashboard');
+    } catch (err) {
+      try { toast.error(err.response?.data?.message || 'Đăng nhập thất bại!'); } catch {}
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <form className="order-form auth-card" onSubmit={handleSubmit}>
+        <div className="auth-brand">
+          <div className="logo">FF</div>
+          <div>
+            <div className="title">FoodFast</div>
+            <div className="auth-subtitle">Giao nhanh, ngon miệng — đăng nhập để tiếp tục</div>
+          </div>
+        </div>
+
+        <h3>Đăng nhập</h3>
+
+        <input
+          type="text"
+          placeholder="Tên đăng nhập"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          required
+          autoFocus
+          aria-label="Tên đăng nhập"
+        />
+
+        <input
+          type="password"
+          placeholder="Mật khẩu"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          aria-label="Mật khẩu"
+        />
+
+        <div style={{display:'flex',justifyContent:'center',marginTop:6}}>
+          <button type="submit" className="auth-cta">Đăng nhập</button>
+        </div>
+
+        <div className="auth-actions">
+          <div style={{fontSize:12,color:'#6b7280'}}>Chưa có tài khoản?</div>
+          <button type="button" className="auth-link" onClick={() => navigate('/register')}>Đăng ký ngay</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default Login;

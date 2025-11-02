@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: foodfast
+      MYSQL_USER: ff_user
+      MYSQL_PASSWORD: ff_password
+    volumes:
+      - dbdata:/var/lib/mysql
+    # If your host already runs MySQL on 3306, change the left side to avoid conflict
+    ports:
+      - "3307:3306"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: foodfast
+      DB_USER: ff_user
+      DB_PASSWORD: ff_password
+      PORT: 5000
+      NODE_ENV: production
+    depends_on:
+      - db
+    # Map to 5001 on the host to avoid conflicts if something else is using 5000
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+  admin:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3001:80"
+
+volumes:
+  dbdata:

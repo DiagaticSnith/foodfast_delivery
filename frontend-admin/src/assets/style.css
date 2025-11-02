@@ -1,0 +1,323 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  background: #ff4d4f;
+  color: #fff;
+  padding: 16px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.navbar-brand {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+.navbar a {
+  color: #fff;
+  margin-left: 24px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.navbar a:hover {
+  color: #ffd666;
+}
+
+.menu-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 32px;
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 0 24px;
+}
+.menu-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: box-shadow 0.2s;
+}
+.menu-item:hover {
+  box-shadow: 0 4px 16px rgba(255,77,79,0.15);
+}
+.menu-item h4 {
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
+  color: #ff4d4f;
+}
+.menu-item p {
+  margin: 0 0 12px 0;
+  color: #555;
+}
+.menu-item .price {
+  font-weight: bold;
+  color: #ff4d4f;
+  margin-bottom: 12px;
+}
+.menu-item button {
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.menu-item button:hover {
+  background: #d9363e;
+}
+
+.cart {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 24px;
+  max-width: 400px;
+  margin: 32px auto;
+}
+.cart h3 {
+  color: #ff4d4f;
+  margin-bottom: 16px;
+}
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.cart-item span {
+  font-size: 1rem;
+}
+.cart-total {
+  font-weight: bold;
+  color: #ff4d4f;
+  margin-top: 16px;
+  text-align: right;
+}
+.order-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 24px;
+  max-width: 400px;
+  margin: 32px auto;
+}
+.order-form h3 {
+  color: #ff4d4f;
+  margin-bottom: 16px;
+}
+.order-form input, .order-form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+}
+.order-form button {
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.order-form button:hover {
+  background: #d9363e;
+}
+
+/* Auth / Login / Register styles */
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* center relative to full viewport so card appears visually centered */
+  min-height: 100vh;
+  padding: 12px 24px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(16,24,40,0.08);
+  background: linear-gradient(180deg,#ffffff,#fffefc);
+  min-height: 480px; /* increased height as requested */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertically center content */
+  /* nudge upward so card sits visually higher on the viewport */
+  transform: translateY(-30%);
+}
+
+@media (max-width:480px){
+  .auth-card { transform: translateY(-4%); }
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.auth-brand .logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #ff4d4f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+}
+.auth-brand .title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+.auth-subtitle {color:#6b7280;font-size:0.92rem;margin-bottom:12px}
+.auth-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+}
+.auth-link {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4d4f 100%);
+  box-shadow: 0 6px 18px rgba(255,77,79,0.2), 0 2px 6px rgba(0,0,0,0.06);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  overflow: hidden;
+}
+
+.auth-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left 0.5s ease;
+}
+
+.auth-link:hover::before {
+  left: 100%;
+}
+
+.auth-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255,77,79,0.3), 0 3px 8px rgba(0,0,0,0.1);
+  text-decoration: none;
+}
+.auth-cta {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4d4f 100%);
+  box-shadow: 0 8px 24px rgba(255,77,79,0.25), 0 2px 8px rgba(0,0,0,0.08);
+  border: none;
+  color: #fff;
+  padding: 14px 32px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.05rem;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.auth-cta:hover::before {
+  left: 100%;
+}
+.auth-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255,77,79,0.35), 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.auth-cta:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 20px rgba(255,77,79,0.25);
+}
+
+@media (max-width:480px){
+  .auth-card{padding:18px}
+  .auth-brand .title{font-size:1rem}
+}
+
+/* Make form controls centered and constrained so left/right spacing looks symmetric */
+.order-form, .order-form * { box-sizing: border-box; }
+.order-form input,
+.order-form textarea,
+.order-form .auth-cta,
+.order-form .auth-link {
+  max-width: 360px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+.order-form input, .order-form textarea { padding: 10px 12px; }
+.order-form h3 { 
+  margin: 0px 0 24px 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  position: relative;
+  line-height: 1.2;
+}
+
+.order-form h3::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6b6b, #ff4d4f);
+  border-radius: 2px;
+}
