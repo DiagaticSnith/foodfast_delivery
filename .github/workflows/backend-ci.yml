@@ -115,8 +115,14 @@ jobs:
         shell: bash
 
       - name: Run migrations (optional)
-        run: npx sequelize db:migrate --env test
+        run: |
+          # Force using the published localhost port so DNS 'mysql' resolution is not required
+          export DB_HOST=127.0.0.1
+          export DB_PORT=3306
+          echo "Running migrations against 127.0.0.1:3306"
+          npx sequelize db:migrate --url "mysql://ff_user:ff_password@127.0.0.1:3306/foodfast" --env test
         working-directory: ./backend
+        shell: bash
 
       - name: Run tests
         run: npm run test:ci
