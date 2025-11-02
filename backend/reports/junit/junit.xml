@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="96" failures="0" errors="0" time="12.554">
+  <testsuite name="orderController basic flows" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="3.842" tests="21">
+    <testcase classname="orderController basic flows createOrder - creates order and details" name="orderController basic flows createOrder - creates order and details" time="0.023">
+    </testcase>
+    <testcase classname="orderController basic flows getOrderBySessionId - not found -&gt; 404" name="orderController basic flows getOrderBySessionId - not found -&gt; 404" time="0.01">
+    </testcase>
+    <testcase classname="orderController basic flows getOrderBySessionId - found -&gt; returns order" name="orderController basic flows getOrderBySessionId - found -&gt; returns order" time="0.009">
+    </testcase>
+    <testcase classname="orderController basic flows updateOrderStatus - invalid status -&gt; 400" name="orderController basic flows updateOrderStatus - invalid status -&gt; 400" time="0.006">
+    </testcase>
+    <testcase classname="orderController basic flows updateOrderStatus - Done releases drone" name="orderController basic flows updateOrderStatus - Done releases drone" time="0.007">
+    </testcase>
+    <testcase classname="orderController basic flows getUserOrders - returns array" name="orderController basic flows getUserOrders - returns array" time="0.008">
+    </testcase>
+    <testcase classname="orderController basic flows rejectOrder - not found -&gt; 404" name="orderController basic flows rejectOrder - not found -&gt; 404" time="0.003">
+    </testcase>
+    <testcase classname="orderController basic flows rejectOrder - success" name="orderController basic flows rejectOrder - success" time="0.004">
+    </testcase>
+    <testcase classname="orderController basic flows createOrder - no items does not create OrderDetail" name="orderController basic flows createOrder - no items does not create OrderDetail" time="0.005">
+    </testcase>
+    <testcase classname="orderController basic flows updateOrderStatus - Accepted with autoAssign success" name="orderController basic flows updateOrderStatus - Accepted with autoAssign success" time="0.011">
+    </testcase>
+    <testcase classname="orderController basic flows updateOrderStatus - Accepted but NO_DRONE" name="orderController basic flows updateOrderStatus - Accepted but NO_DRONE" time="0.004">
+    </testcase>
+    <testcase classname="orderController basic flows updateOrderStatus - autoAssign throws -&gt; returns 500" name="orderController basic flows updateOrderStatus - autoAssign throws -&gt; returns 500" time="0.014">
+    </testcase>
+    <testcase classname="orderController basic flows updateOrderStatus - Delivering returns delivering message" name="orderController basic flows updateOrderStatus - Delivering returns delivering message" time="0.002">
+    </testcase>
+    <testcase classname="orderController basic flows getAllOrders - filters by restaurantId" name="orderController basic flows getAllOrders - filters by restaurantId" time="0.002">
+    </testcase>
+    <testcase classname="orderController basic flows getAllOrders - no restaurantId returns all orders" name="orderController basic flows getAllOrders - no restaurantId returns all orders" time="0.002">
+    </testcase>
+    <testcase classname="orderController basic flows getAllOrders - error -&gt; 500" name="orderController basic flows getAllOrders - error -&gt; 500" time="0.003">
+    </testcase>
+    <testcase classname="orderController basic flows assignDrone &amp; assignShipper return 410 deprecated" name="orderController basic flows assignDrone &amp; assignShipper return 410 deprecated" time="0.003">
+    </testcase>
+    <testcase classname="orderController basic flows autoAssignDroneForOrder - order not found throws" name="orderController basic flows autoAssignDroneForOrder - order not found throws" time="0.108">
+    </testcase>
+    <testcase classname="orderController basic flows autoAssignDroneForOrder - already has drone returns id" name="orderController basic flows autoAssignDroneForOrder - already has drone returns id" time="0.003">
+    </testcase>
+    <testcase classname="orderController basic flows autoAssignDroneForOrder - assigns drone successfully" name="orderController basic flows autoAssignDroneForOrder - assigns drone successfully" time="0.003">
+    </testcase>
+    <testcase classname="orderController basic flows autoAssignDroneForOrder - no drone -&gt; throws NO_DRONE" name="orderController basic flows autoAssignDroneForOrder - no drone -&gt; throws NO_DRONE" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: checkout &amp; payment" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="5.127" tests="2">
+    <testcase classname="integration: checkout &amp; payment POST /payment intent returns clientSecret" name="integration: checkout &amp; payment POST /payment intent returns clientSecret" time="0.234">
+    </testcase>
+    <testcase classname="integration: checkout &amp; payment GET /checkout/success handler" name="integration: checkout &amp; payment GET /checkout/success handler" time="0.095">
+    </testcase>
+  </testsuite>
+  <testsuite name="userController - register &amp; login" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="5.127" tests="23">
+    <testcase classname="userController - register &amp; login register - success" name="userController - register &amp; login register - success" time="0.045">
+    </testcase>
+    <testcase classname="userController - register &amp; login register - duplicate username" name="userController - register &amp; login register - duplicate username" time="0.009">
+    </testcase>
+    <testcase classname="userController - register &amp; login login - success" name="userController - register &amp; login login - success" time="0.015">
+    </testcase>
+    <testcase classname="userController - register &amp; login login - invalid credentials" name="userController - register &amp; login login - invalid credentials" time="0.006">
+    </testcase>
+    <testcase classname="userController - register &amp; login register - missing fields" name="userController - register &amp; login register - missing fields" time="0.005">
+    </testcase>
+    <testcase classname="userController - register &amp; login register - duplicate email" name="userController - register &amp; login register - duplicate email" time="0.006">
+    </testcase>
+    <testcase classname="userController - register &amp; login register - sequelize unique constraint error" name="userController - register &amp; login register - sequelize unique constraint error" time="0.007">
+    </testcase>
+    <testcase classname="userController - register &amp; login login - wrong password (user exists but wrong pw)" name="userController - register &amp; login login - wrong password (user exists but wrong pw)" time="0.004">
+    </testcase>
+    <testcase classname="userController - register &amp; login getShippersAndPending - returns list" name="userController - register &amp; login getShippersAndPending - returns list" time="0.004">
+    </testcase>
+    <testcase classname="userController - register &amp; login getUserById - not found -&gt; 404" name="userController - register &amp; login getUserById - not found -&gt; 404" time="0.008">
+    </testcase>
+    <testcase classname="userController - register &amp; login getUserById - success" name="userController - register &amp; login getUserById - success" time="0.003">
+    </testcase>
+    <testcase classname="userController - register &amp; login getAllUsers - returns users" name="userController - register &amp; login getAllUsers - returns users" time="0.003">
+    </testcase>
+    <testcase classname="userController - register &amp; login updateUserInfo - user not found -&gt; 404" name="userController - register &amp; login updateUserInfo - user not found -&gt; 404" time="0.003">
+    </testcase>
+    <testcase classname="userController - register &amp; login updateUserInfo - success updates fields" name="userController - register &amp; login updateUserInfo - success updates fields" time="0.004">
+    </testcase>
+    <testcase classname="userController - register &amp; login updateUserRole - invalid role returns 400" name="userController - register &amp; login updateUserRole - invalid role returns 400" time="0.003">
+    </testcase>
+    <testcase classname="userController - register &amp; login updateUserRole - success change to restaurant" name="userController - register &amp; login updateUserRole - success change to restaurant" time="0.002">
+    </testcase>
+    <testcase classname="userController - register &amp; login getShippersAndPending - error -&gt; 500" name="userController - register &amp; login getShippersAndPending - error -&gt; 500" time="0.004">
+    </testcase>
+    <testcase classname="userController - register &amp; login getAllUsers - error -&gt; 500" name="userController - register &amp; login getAllUsers - error -&gt; 500" time="0.004">
+    </testcase>
+    <testcase classname="userController - register &amp; login updateUserInfo - save throws -&gt; 400" name="userController - register &amp; login updateUserInfo - save throws -&gt; 400" time="0.003">
+    </testcase>
+    <testcase classname="userController - register &amp; login updateUserRole - save throws -&gt; 400" name="userController - register &amp; login updateUserRole - save throws -&gt; 400" time="0.002">
+    </testcase>
+    <testcase classname="userController - register &amp; login getUserById - findByPk throws -&gt; 500" name="userController - register &amp; login getUserById - findByPk throws -&gt; 500" time="0.002">
+    </testcase>
+    <testcase classname="userController - register &amp; login register - generic error -&gt; 400 with message" name="userController - register &amp; login register - generic error -&gt; 400 with message" time="0.003">
+    </testcase>
+    <testcase classname="userController - register &amp; login login - findOne throws -&gt; 400" name="userController - register &amp; login login - findOne throws -&gt; 400" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: drone endpoints (deprecated)" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="5.2" tests="1">
+    <testcase classname="integration: drone endpoints (deprecated) assignDrone and assignShipper return 410" name="integration: drone endpoints (deprecated) assignDrone and assignShipper return 410" time="2.402">
+    </testcase>
+  </testsuite>
+  <testsuite name="paymentController.createPaymentIntent" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:35" time="1.652" tests="2">
+    <testcase classname="paymentController.createPaymentIntent creates a payment intent and returns clientSecret" name="paymentController.createPaymentIntent creates a payment intent and returns clientSecret" time="0.015">
+    </testcase>
+    <testcase classname="paymentController.createPaymentIntent handles stripe error with 500" name="paymentController.createPaymentIntent handles stripe error with 500" time="0.01">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: auth flows" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:30" time="6.579" tests="2">
+    <testcase classname="integration: auth flows POST /register validation and success" name="integration: auth flows POST /register validation and success" time="0.845">
+    </testcase>
+    <testcase classname="integration: auth flows POST /login success and invalid" name="integration: auth flows POST /login success and invalid" time="0.085">
+    </testcase>
+  </testsuite>
+  <testsuite name="checkoutSuccessController.handleCheckoutSuccess" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:36" time="1.065" tests="3">
+    <testcase classname="checkoutSuccessController.handleCheckoutSuccess returns 400 when missing session_id" name="checkoutSuccessController.handleCheckoutSuccess returns 400 when missing session_id" time="0.011">
+    </testcase>
+    <testcase classname="checkoutSuccessController.handleCheckoutSuccess creates order and details from stripe session and returns orderId" name="checkoutSuccessController.handleCheckoutSuccess creates order and details from stripe session and returns orderId" time="0.004">
+    </testcase>
+    <testcase classname="checkoutSuccessController.handleCheckoutSuccess handles exceptions and returns 500" name="checkoutSuccessController.handleCheckoutSuccess handles exceptions and returns 500" time="0.011">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: mounted controllers" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:30" time="6.963" tests="3">
+    <testcase classname="integration: mounted controllers POST /register -&gt; userController.register (success &amp; validation)" name="integration: mounted controllers POST /register -&gt; userController.register (success &amp; validation)" time="0.851">
+    </testcase>
+    <testcase classname="integration: mounted controllers POST /orders -&gt; orderController.createOrder (with items and without items)" name="integration: mounted controllers POST /orders -&gt; orderController.createOrder (with items and without items)" time="2.235">
+    </testcase>
+    <testcase classname="integration: mounted controllers POST /checkout -&gt; stripeController.createCheckoutSession" name="integration: mounted controllers POST /checkout -&gt; stripeController.createCheckoutSession" time="0.062">
+    </testcase>
+  </testsuite>
+  <testsuite name="stripeController.createCheckoutSession" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:36" time="1.176" tests="2">
+    <testcase classname="stripeController.createCheckoutSession creates session with email and returns sessionId &amp; url" name="stripeController.createCheckoutSession creates session with email and returns sessionId &amp; url" time="0.007">
+    </testcase>
+    <testcase classname="stripeController.createCheckoutSession handles stripe error -&gt; 500" name="stripeController.createCheckoutSession handles stripe error -&gt; 500" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="droneDispatcher.attemptAssignOne" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:37" time="0.532" tests="6">
+    <testcase classname="droneDispatcher.attemptAssignOne assigns when order and drone are available" name="droneDispatcher.attemptAssignOne assigns when order and drone are available" time="0.014">
+    </testcase>
+    <testcase classname="droneDispatcher.attemptAssignOne returns false when no eligible order found" name="droneDispatcher.attemptAssignOne returns false when no eligible order found" time="0.003">
+    </testcase>
+    <testcase classname="droneDispatcher.attemptAssignOne returns false when no drone available" name="droneDispatcher.attemptAssignOne returns false when no drone available" time="0.007">
+    </testcase>
+    <testcase classname="droneDispatcher.attemptAssignOne throws when transaction errors" name="droneDispatcher.attemptAssignOne throws when transaction errors" time="0.068">
+    </testcase>
+    <testcase classname="droneDispatcher start/stop and error handling start and stop create and clear interval" name="droneDispatcher start/stop and error handling start and stop create and clear interval" time="0.021">
+    </testcase>
+    <testcase classname="droneDispatcher start/stop and error handling start handles attemptAssignOne throwing and logs error" name="droneDispatcher start/stop and error handling start handles attemptAssignOne throwing and logs error" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="errorHandler middleware" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:36" time="1.239" tests="1">
+    <testcase classname="errorHandler middleware should return 500 with generic message" name="errorHandler middleware should return 500 with generic message" time="0.025">
+    </testcase>
+  </testsuite>
+  <testsuite name="src/config/db connectDB" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:37" time="0.442" tests="3">
+    <testcase classname="src/config/db connectDB authenticate succeeds and query succeeds -&gt; logs connected" name="src/config/db connectDB authenticate succeeds and query succeeds -&gt; logs connected" time="0.018">
+    </testcase>
+    <testcase classname="src/config/db connectDB authenticate succeeds but query fails -&gt; warns but does not exit" name="src/config/db connectDB authenticate succeeds but query fails -&gt; warns but does not exit" time="0.015">
+    </testcase>
+    <testcase classname="src/config/db connectDB authenticate fails -&gt; logs error and exits" name="src/config/db connectDB authenticate fails -&gt; logs error and exits" time="0.013">
+    </testcase>
+  </testsuite>
+  <testsuite name="models/index wiring" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.307" tests="1">
+    <testcase classname="models/index wiring requires models and calls associate where present" name="models/index wiring requires models and calls associate where present" time="0.016">
+    </testcase>
+  </testsuite>
+  <testsuite name="restaurantController" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:37" time="1.125" tests="5">
+    <testcase classname="restaurantController getAll defaults to active status and returns results" name="restaurantController getAll defaults to active status and returns results" time="0.007">
+    </testcase>
+    <testcase classname="restaurantController getById returns 404 when not found" name="restaurantController getById returns 404 when not found" time="0.004">
+    </testcase>
+    <testcase classname="restaurantController create sets pending when userId present" name="restaurantController create sets pending when userId present" time="0.012">
+    </testcase>
+    <testcase classname="restaurantController update returns 404 when not found" name="restaurantController update returns 404 when not found" time="0.002">
+    </testcase>
+    <testcase classname="restaurantController delete hides restaurant when found" name="restaurantController delete hides restaurant when found" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="Review model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.417" tests="1">
+    <testcase classname="Review model define &amp; associate defines Review and sets up associations" name="Review model define &amp; associate defines Review and sets up associations" time="0.023">
+    </testcase>
+  </testsuite>
+  <testsuite name="Cart model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.289" tests="1">
+    <testcase classname="Cart model define &amp; associate defines Cart and sets belongsTo and hasMany" name="Cart model define &amp; associate defines Cart and sets belongsTo and hasMany" time="0.027">
+    </testcase>
+  </testsuite>
+  <testsuite name="Restaurant model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.247" tests="1">
+    <testcase classname="Restaurant model define &amp; associate defines Restaurant and associates Menu and User" name="Restaurant model define &amp; associate defines Restaurant and associates Menu and User" time="0.017">
+    </testcase>
+  </testsuite>
+  <testsuite name="User model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.296" tests="1">
+    <testcase classname="User model define &amp; associate calls sequelize.define and exports model with associate" name="User model define &amp; associate calls sequelize.define and exports model with associate" time="0.012">
+    </testcase>
+  </testsuite>
+  <testsuite name="CartItem model define &amp; top-level belongsTo" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.283" tests="1">
+    <testcase classname="CartItem model define &amp; top-level belongsTo defines CartItem and calls belongsTo with Menu" name="CartItem model define &amp; top-level belongsTo defines CartItem and calls belongsTo with Menu" time="0.008">
+    </testcase>
+  </testsuite>
+  <testsuite name="Menu model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.26" tests="1">
+    <testcase classname="Menu model define &amp; associate defines Menu and belongsTo Restaurant" name="Menu model define &amp; associate defines Menu and belongsTo Restaurant" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="Drone model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.27" tests="1">
+    <testcase classname="Drone model define &amp; associate defines Drone and hasMany Order" name="Drone model define &amp; associate defines Drone and hasMany Order" time="0.011">
+    </testcase>
+  </testsuite>
+  <testsuite name="Order model define &amp; associate" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.269" tests="1">
+    <testcase classname="Order model define &amp; associate defines Order and sets up associations" name="Order model define &amp; associate defines Order and sets up associations" time="0.016">
+    </testcase>
+  </testsuite>
+  <testsuite name="OrderDetail model define &amp; top-level belongsTo" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:38" time="0.334" tests="1">
+    <testcase classname="OrderDetail model define &amp; top-level belongsTo defines OrderDetail and sets up belongsTo relations" name="OrderDetail model define &amp; top-level belongsTo defines OrderDetail and sets up belongsTo relations" time="0.014">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: restaurant endpoints" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="7.913" tests="2">
+    <testcase classname="integration: restaurant endpoints GET /restaurants returns list" name="integration: restaurant endpoints GET /restaurants returns list" time="0.338">
+    </testcase>
+    <testcase classname="integration: restaurant endpoints CRUD flows" name="integration: restaurant endpoints CRUD flows" time="0.188">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: menu endpoints" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="8.236" tests="2">
+    <testcase classname="integration: menu endpoints GET /menus and GET /menu/:id not found" name="integration: menu endpoints GET /menus and GET /menu/:id not found" time="2.098">
+    </testcase>
+    <testcase classname="integration: menu endpoints POST/PUT/DELETE menu" name="integration: menu endpoints POST/PUT/DELETE menu" time="0.536">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: /__health" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="8.183" tests="1">
+    <testcase classname="integration: /__health returns ok JSON" name="integration: /__health returns ok JSON" time="0.279">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: user endpoints" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="8.529" tests="2">
+    <testcase classname="integration: user endpoints GET /user/:id not found and found" name="integration: user endpoints GET /user/:id not found and found" time="0.733">
+    </testcase>
+    <testcase classname="integration: user endpoints PUT update info 404 and success" name="integration: user endpoints PUT update info 404 and success" time="0.425">
+    </testcase>
+  </testsuite>
+  <testsuite name="integration: order flows" errors="0" failures="0" skipped="0" timestamp="2025-11-02T14:05:31" time="9.91" tests="5">
+    <testcase classname="integration: order flows POST /orders create with and without items" name="integration: order flows POST /orders create with and without items" time="3.395">
+    </testcase>
+    <testcase classname="integration: order flows GET /order/session/:sessionId not found &amp; found" name="integration: order flows GET /order/session/:sessionId not found &amp; found" time="0.588">
+    </testcase>
+    <testcase classname="integration: order flows PUT /orders/:id status validation and Done releases drone" name="integration: order flows PUT /orders/:id status validation and Done releases drone" time="0.4">
+    </testcase>
+    <testcase classname="integration: order flows PUT /orders/:id Accepted autoAssign branches" name="integration: order flows PUT /orders/:id Accepted autoAssign branches" time="0.399">
+    </testcase>
+    <testcase classname="integration: order flows GET /orders user list and reject flow" name="integration: order flows GET /orders user list and reject flow" time="0.317">
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -76,4 +76,34 @@ npm run dev
 - 
 ---
 
+## CI / CD
+
+This repository includes two GitHub Actions workflows in `.github/workflows/`:
+
+- `ci.yml`: runs on push and pull requests and performs the following checks:
+	- Installs backend dependencies (no build step for backend)
+	- Installs and builds `frontend` (Vite)
+	- Installs and builds `frontend-admin` (Vite)
+
+- `cd.yml`: runs on pushes to `main` / `master` and performs:
+	- Builds Docker images for `backend`, `frontend`, `frontend-admin` and pushes them to GitHub Container Registry (GHCR) under your account
+	- Optional deploy step (via SSH) that will run `docker-compose pull` and `docker-compose up -d` on your remote host
+
+Required repository secrets for CD (set these in your GitHub repo settings -> Secrets):
+
+- `SSH_HOST` (optional) — remote host for deployment
+- `SSH_USER` (optional)
+- `SSH_PORT` (optional, default 22)
+- `SSH_PRIVATE_KEY` (optional) — private key for deployment user
+
+Notes:
+- The CD workflow uses the `GITHUB_TOKEN` to authenticate with GHCR. No extra token is required to push packages to GHCR for the same repository owner when using the built-in token.
+- If you prefer Docker Hub instead of GHCR, update `cd.yml` to login to Docker Hub and adjust tags and secrets (`DOCKERHUB_USERNAME` / `DOCKERHUB_PASSWORD`).
+- The deploy step only runs if `SSH_HOST` and `SSH_PRIVATE_KEY` secrets are set.
+
+If you want, I can:
+- Add an automatic DB migration step before the backend container is started on the remote host (e.g., `npx sequelize db:migrate`).
+- Change CD to build multi-arch images or add image tags for SemVer.
+- Configure a more advanced deploy (Capistrano/Ansible/Kubernetes).
+
 

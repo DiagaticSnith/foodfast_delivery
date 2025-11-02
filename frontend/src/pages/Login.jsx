@@ -13,14 +13,19 @@ const Login = ({ setUser }) => {
     e.preventDefault();
     try {
       const res = await userAPI.login({ username, password });
+      // Disallow admin accounts from logging in via the user frontend
+      if (res.data.user?.role === 'admin') {
+        // Show generic 'invalid credentials' style message so admin cannot use user login
+        try { toast.error('Tên đăng nhập hoặc mật khẩu không đúng'); } catch {}
+        return;
+      }
+
       setAuthToken(res.data.token);
       setUser(res.data.user);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       localStorage.setItem('token', res.data.token);
       try { toast.success('Đăng nhập thành công!'); } catch {}
-      if (res.data.user?.role === 'admin') {
-        navigate('/admin-dashboard');
-      } else if (res.data.user?.role === 'restaurant') {
+      if (res.data.user?.role === 'restaurant') {
         navigate('/restaurant-dashboard');
       } else {
         navigate('/');

@@ -157,48 +157,57 @@ const RestaurantAdmin = () => {
     <div className="ff-page">
       <div className="ff-toolbar">
         <input className="ff-input ff-input--min" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm nhà hàng..." />
-        <button onClick={openCreate} className="ff-btn ff-btn--accent">+ Thêm nhà hàng</button>
         <label className="ff-checkbox">
           <input type="checkbox" checked={showHiddenOnly} onChange={()=>setShowHiddenOnly(v=>{ const nv = !v; setPage(1); return nv; })} /> Chỉ hiện đã ẩn
         </label>
       </div>
       <Modal
         open={openModal}
-        title={editing ? 'Cập nhật nhà hàng' : 'Thêm nhà hàng mới'}
+        title={editing ? '✏️ Cập nhật nhà hàng' : '✨ Thêm nhà hàng mới'}
         onClose={()=>{setOpenModal(false); setEditing(null);}}
         footer={null}
+        size="lg"
       >
         <div className="restaurant-form">
           <form onSubmit={handleSubmit} className="ff-stack">
+            <div className="form-header">
+              <p className="form-description">
+                {editing ? 
+                  'Cập nhật thông tin nhà hàng. Vui lòng kiểm tra kỹ trước khi lưu.' : 
+                  'Thêm một nhà hàng mới vào hệ thống. Tất cả các trường đánh dấu * là bắt buộc.'
+                }
+              </p>
+            </div>
             <div className="form-field">
-              <label className="form-label">Tên nhà hàng</label>
+              <label className="form-label">🏪 Tên nhà hàng</label>
               <input 
                 className="ff-input" 
                 value={form.name} 
                 onChange={e=>setForm(f=>({...f,name:e.target.value}))} 
-                placeholder="Nhập tên nhà hàng" 
+                placeholder="Ví dụ: Nhà hàng Hương Việt" 
                 required 
               />
             </div>
             
             <div className="form-field">
-              <label className="form-label">Địa chỉ</label>
+              <label className="form-label">📍 Địa chỉ</label>
               <input 
                 className="ff-input" 
                 value={form.address} 
                 onChange={e=>setForm(f=>({...f,address:e.target.value}))} 
-                placeholder="Nhập địa chỉ nhà hàng" 
+                placeholder="Ví dụ: 123 Nguyễn Văn Cừ, Quận 1, TP.HCM" 
                 required 
               />
             </div>
             
             <div className="form-field">
-              <label className="form-label">Ảnh nhà hàng</label>
+              <label className="form-label">📸 Ảnh nhà hàng</label>
               <div className="file-upload-section">
                 <input 
                   type="file" 
                   accept="image/*" 
                   className="file-input"
+                  id="restaurant-image-upload"
                   onChange={async (e)=>{
                     const file = e.target.files?.[0];
                     if (!file) return;
@@ -210,6 +219,7 @@ const RestaurantAdmin = () => {
                         headers: { 'Content-Type': 'multipart/form-data' }
                       });
                       setForm(f=>({...f, imageUrl: res.data.url }));
+                      try { toast.success('Tải ảnh thành công!'); } catch {}
                     } catch (err) {
                       const msg = err?.response?.data?.message || err?.message || 'Upload ảnh thất bại';
                       try { toast.error(msg); } catch {}
@@ -218,15 +228,30 @@ const RestaurantAdmin = () => {
                     }
                   }} 
                 />
+                <label htmlFor="restaurant-image-upload" className="file-upload-button">
+                  <span>📁</span>
+                  <span>Chọn ảnh nhà hàng</span>
+                </label>
                 {uploadingRestaurantImage && (
                   <div className="upload-status">
-                    <span className="loading-text">🔄 Đang tải ảnh...</span>
+                    <span className="loading-text">
+                      <span>🔄</span>
+                      <span>Đang tải ảnh lên...</span>
+                    </span>
                   </div>
                 )}
               </div>
               
               {form.imageUrl && (
                 <div className="image-preview">
+                  <button 
+                    type="button"
+                    className="image-remove-btn"
+                    onClick={() => setForm(f => ({...f, imageUrl: ''}))}
+                    title="Xóa ảnh"
+                  >
+                    ×
+                  </button>
                   <img 
                     src={form.imageUrl} 
                     alt="preview-restaurant" 
@@ -234,19 +259,22 @@ const RestaurantAdmin = () => {
                     onError={(e)=>{e.currentTarget.style.display='none';}} 
                   />
                   <div className="preview-label">
-                    <span className="preview-text">🖼️ Xem trước ảnh</span>
+                    <span className="preview-text">
+                      <span>🖼️</span>
+                      <span>Xem trước ảnh nhà hàng</span>
+                    </span>
                   </div>
                 </div>
               )}
             </div>
             
             <div className="form-field">
-              <label className="form-label">Mô tả nhà hàng</label>
+              <label className="form-label">📝 Mô tả nhà hàng</label>
               <textarea 
                 className="ff-textarea" 
                 value={form.description} 
                 onChange={e=>setForm(f=>({...f,description:e.target.value}))} 
-                placeholder="Mô tả về nhà hàng, món ăn đặc sản..." 
+                placeholder="Mô tả về nhà hàng, món ăn đặc sản, không gian, dịch vụ..." 
                 rows={4} 
               />
             </div>
@@ -257,14 +285,18 @@ const RestaurantAdmin = () => {
                 onClick={()=>{setOpenModal(false); setEditing(null);}} 
                 className="ff-btn ff-btn--ghost"
               >
-                ❌ Hủy
+                ❌ Hủy bỏ
               </button>
               <button 
                 type="submit" 
                 disabled={loading||uploadingRestaurantImage} 
                 className="ff-btn ff-btn--accent"
               >
-                {editing ? '✓ Cập nhật' : '➕ Thêm mới'}
+                {loading || uploadingRestaurantImage ? (
+                  <span>🔄 Đang xử lý...</span>
+                ) : (
+                  <span>{editing ? '✓ Cập nhật' : '➕ Tạo mới'}</span>
+                )}
               </button>
             </div>
           </form>

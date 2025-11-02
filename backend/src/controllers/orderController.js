@@ -58,6 +58,9 @@ async function autoAssignDroneForOrder(orderId) {
   return assignedDroneId;
 }
 
+// Export helper for testing
+exports.autoAssignDroneForOrder = autoAssignDroneForOrder;
+
 // Lấy tất cả đơn hàng (admin hoặc nhà hàng với filter)
 exports.getAllOrders = async (req, res) => {
   try {
@@ -194,9 +197,10 @@ exports.rejectOrder = async (req, res) => {
     const order = await Order.findByPk(id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
     order.status = 'Rejected';
+    // Persist the rejection reason into the order.description field
+    order.description = reason || null;
     await order.save();
-    // TODO: có thể lưu reason vào bảng riêng hoặc field ghi chú nếu schema hỗ trợ
-    return res.json({ message: 'Đã từ chối đơn', order, reason: reason || null });
+    return res.json({ message: 'Đã từ chối đơn', order });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

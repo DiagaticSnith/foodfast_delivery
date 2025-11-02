@@ -47,21 +47,27 @@ async function attemptAssignOne() {
 
 function startDroneDispatcher({ intervalMs = 5000, burst = 3 } = {}) {
   if (intervalHandle) return; // already running
-  intervalHandle = setInterval(async () => {
-    if (isTickRunning) return; // avoid overlapping ticks
-    isTickRunning = true;
-    try {
-      for (let i = 0; i < burst; i++) {
-        const didAssign = await attemptAssignOne();
-        if (!didAssign) break; // nothing to assign right now
-      }
-    } catch (e) {
-      console.error('[Dispatcher] Error in tick:', e?.message || e);
-    } finally {
-      isTickRunning = false;
-    }
-  }, intervalMs);
+  intervalHandle = setInterval(() => runTick({ burst }), intervalMs);
   console.log(`[Dispatcher] Drone dispatcher started. Interval: ${intervalMs}ms, burst: ${burst}`);
+}
+
+async function runTick({ burst = 3 } = {}) {
+  if (isTickRunning) return;
+  isTickRunning = true;
+  try {
+    for (let i = 0; i < burst; i++) {
+      const didAssign = await attemptAssignOne();
+      if (!didAssign) break;
+    }
+  } catch (e) {
+    if (e && e.stack) {
+      console.error('[Dispatcher] Error in tick:', e.stack);
+    } else {
+      console.error('[Dispatcher] Error in tick:', e?.message || e);
+    }
+  } finally {
+    isTickRunning = false;
+  }
 }
 
 function stopDroneDispatcher() {
@@ -72,4 +78,6 @@ function stopDroneDispatcher() {
   }
 }
 
-module.exports = { startDroneDispatcher, stopDroneDispatcher };
+// Export attemptAssignOne for unit testing purposes as a low-risk improvement.
+// Export runTick for testing the interval body directly.
+module.exports = { startDroneDispatcher, stopDroneDispatcher, attemptAssignOne, runTick };
