@@ -47,6 +47,7 @@ const OrderHistory = () => {
 			return orders.filter(o => active.has(o.status));
 		}, [orders]);
 		const deliveredOrders = useMemo(() => orders.filter(o => o.status === 'Done'), [orders]);
+		const cancelledOrders = useMemo(() => orders.filter(o => o.status === 'Rejected'), [orders]);
 		const deliveredTotalPages = Math.max(1, Math.ceil(deliveredOrders.length / deliveredPageSize));
 		const deliveredPaged = useMemo(() => deliveredOrders.slice((deliveredPage-1)*deliveredPageSize, deliveredPage*deliveredPageSize), [deliveredOrders, deliveredPage]);
 
@@ -110,6 +111,11 @@ const OrderHistory = () => {
 						Không có món ăn nào trong đơn hàng này.
 					</div>
 				)}
+				{expanded === order.id && order.status === 'Rejected' && (
+					<div className="oh-cancel-reason">
+						<b>Lý do hủy:</b> {order.description ? order.description : <span className="oh-muted">Không có lý do được cung cấp.</span>}
+					</div>
+				)}
 				{expanded === order.id && !details[order.id] && (
 					<div className="oh-muted">
 						Đang tải chi tiết đơn hàng...
@@ -132,6 +138,14 @@ const OrderHistory = () => {
 					<div className="oh-empty">Bạn không có đơn nào đang giao.</div>
 				) : (
 					deliveringOrders.map(o => <OrderRow key={o.id} order={o} />)
+				)}
+
+				{/* Đã hủy */}
+				<h3 className="oh-section">🛑 Đơn đã hủy</h3>
+				{cancelledOrders.length === 0 ? (
+					<div className="oh-empty">Bạn không có đơn nào bị hủy.</div>
+				) : (
+					cancelledOrders.map(o => <OrderRow key={o.id} order={o} />)
 				)}
 
 				{/* Đã giao */}

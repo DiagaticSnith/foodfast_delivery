@@ -6,6 +6,7 @@ const Order = sequelize.define('Order', {
   total: { type: DataTypes.FLOAT, allowNull: false },
   status: { type: DataTypes.STRING, defaultValue: 'Pending' },
   address: { type: DataTypes.STRING, allowNull: false },
+  description: { type: DataTypes.TEXT, allowNull: true },
   sessionId: { type: DataTypes.STRING, allowNull: true }, // Lưu session_id Stripe
   droneId: {
     type: DataTypes.INTEGER,

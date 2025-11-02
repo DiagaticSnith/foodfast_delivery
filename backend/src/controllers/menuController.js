@@ -1,5 +1,6 @@
-const Menu = require('../models/Menu');
 const { Op } = require('sequelize');
+// Use models index to be able to include Restaurant when querying menus
+const { Menu, Restaurant } = require('../models');
 
 exports.getMenus = async (req, res) => {
   try {
@@ -20,7 +21,16 @@ exports.getMenus = async (req, res) => {
     if (search && search.trim() !== '') {
       where.name = { [Op.like]: `%${search}%` };
     }
-    const menus = await Menu.findAll({ where });
+  // Exclude menus whose restaurant is hidden unless includeHiddenFlag is true
+  const restaurantWhere = includeHiddenFlag ? undefined : { status: 'active' };
+
+  const include = [];
+  // include restaurant and optionally filter by its status
+  const restaurantInclude = { model: Restaurant, required: true };
+  if (restaurantWhere && Object.keys(restaurantWhere).length > 0) restaurantInclude.where = restaurantWhere;
+  include.push(restaurantInclude);
+
+  const menus = await Menu.findAll({ where, include });
     res.json(menus);
   } catch (err) {
     console.error('menuController.getMenus error:', err);

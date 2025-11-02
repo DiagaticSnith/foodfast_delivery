@@ -1,0 +1,143 @@
+name: backend-ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: foodfast
+          MYSQL_USER: ff_user
+          MYSQL_PASSWORD: ff_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: foodfast
+      DB_USER: ff_user
+      DB_PASSWORD: ff_password
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./backend
+
+      - name: Install mysql client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y default-mysql-client
+        shell: bash
+
+      - name: "Debug: docker/service status"
+        run: |
+          set -x
+          echo "== Docker ps =="
+          docker ps --all || true
+          echo "== MySQL container logs (if any) =="
+          MYSQL_CONTAINER=$(docker ps -q --filter ancestor=mysql:8.0 || true)
+          if [ -n "$MYSQL_CONTAINER" ]; then
+            docker logs "$MYSQL_CONTAINER" || true
+          else
+            echo "No MySQL container found by ancestor filter. Listing all containers:"
+            docker ps --all || true
+          fi
+        shell: bash
+
+      - name: "Wait for MySQL (localhost health + auth checks)"
+        run: |
+          set -x
+          echo "Waiting for MySQL on 127.0.0.1:3306 (up to 120s). Will try unauthenticated ping then authenticated check."
+          for i in $(seq 1 120); do
+            # First try a simple ping without credentials (server responding)
+            if mysqladmin ping -h 127.0.0.1 -P 3306 --silent 2>/tmp/mysqladmin.err; then
+              echo "MySQL responded (ping) after $i seconds"
+              break
+            fi
+
+            # If ping fails, try authenticating as the application user (ff_user)
+            if mysql -h 127.0.0.1 -P 3306 -u ff_user -pff_password -D foodfast -e 'SELECT 1' >/dev/null 2>/tmp/mysql_auth.err; then
+              echo "MySQL accepted application credentials after $i seconds"
+              break
+            fi
+
+            # show last few lines of both stderr files to help debug
+            echo "-- mysqladmin stderr --"
+            tail -n 50 /tmp/mysqladmin.err || true
+            echo "-- mysql auth stderr --"
+            tail -n 50 /tmp/mysql_auth.err || true
+
+            if [ $i -eq 120 ]; then
+              echo "Timeout after 120 seconds waiting for 127.0.0.1:3306"
+              echo "Dumping containers and logs for debugging"
+              docker ps --all || true
+              MYSQL_CONTAINER=$(docker ps -q --filter ancestor=mysql:8.0 || true)
+              if [ -n "$MYSQL_CONTAINER" ]; then
+                docker logs "$MYSQL_CONTAINER" || true
+              fi
+              echo "Final attempt: show mysql client error output"
+              mysql -h 127.0.0.1 -P 3306 -u ff_user -pff_password -D foodfast -e 'SELECT 1' || true
+              exit 1
+            fi
+            sleep 1
+          done
+        shell: bash
+
+      - name: Run migrations (optional)
+        run: |
+          # Force using the published localhost port so DNS 'mysql' resolution is not required
+          export DB_HOST=127.0.0.1
+          export DB_PORT=3306
+          echo "Running migrations against 127.0.0.1:3306"
+          npx sequelize db:migrate --url "mysql://ff_user:ff_password@127.0.0.1:3306/foodfast" --env test
+        working-directory: ./backend
+        shell: bash
+
+      - name: Run tests
+        run: npm run test:ci
+        working-directory: ./backend
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+
+      - name: Upload junit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: backend/jest-junit.xml

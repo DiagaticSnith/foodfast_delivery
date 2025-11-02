@@ -5,7 +5,14 @@ export const api = axios.create({
 });
 
 export const setAuthToken = (token) => {
-  api.defaults.headers['Authorization'] = `Bearer ${token}`;
+  try {
+    if (!token) {
+      if (api.defaults.headers) delete api.defaults.headers['Authorization'];
+    } else {
+      api.defaults.headers = api.defaults.headers || {};
+      api.defaults.headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (e) {}
 };
 
 // Always attach token from localStorage if available

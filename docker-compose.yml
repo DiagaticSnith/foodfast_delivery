@@ -32,9 +32,10 @@ services:
       - db
     # Map to 5001 on the host to avoid conflicts if something else is using 5000
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
       - ./backend:/app
+      - ./database:/database
 
   frontend:
     build:
@@ -43,6 +44,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      - VITE_API_URL=http://backend:5000
     ports:
       - "3000:80"
 
@@ -53,8 +56,19 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      - VITE_API_URL=http://backend:5000
     ports:
       - "3001:80"
+
+  stripe:
+    image: stripe/stripe-cli:latest
+    restart: unless-stopped
+    environment:
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+    command: ["listen", "--forward-to", "http://backend:5000/api/webhook"]
+    depends_on:
+      - backend
 
 volumes:
   dbdata:
