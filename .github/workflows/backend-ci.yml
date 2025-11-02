@@ -59,16 +59,39 @@ jobs:
           sudo apt-get install -y default-mysql-client
         shell: bash
 
+      - name: Debug: docker/service status
+        run: |
+          set -x
+          echo "== Docker ps =="
+          docker ps --all || true
+          echo "== MySQL container logs (if any) =="
+          MYSQL_CONTAINER=$(docker ps -q --filter ancestor=mysql:8.0 || true)
+          if [ -n "$MYSQL_CONTAINER" ]; then
+            docker logs "$MYSQL_CONTAINER" || true
+          else
+            echo "No MySQL container found by ancestor filter. Listing all containers:"
+            docker ps --all || true
+          fi
+        shell: bash
+
       - name: Wait for MySQL (mysqladmin)
         run: |
-          echo "Waiting for MySQL to be ready on mysql:3306 using mysqladmin..."
-          for i in $(seq 1 60); do
-            if mysqladmin ping -h mysql -P 3306 --silent; then
+          set -x
+          echo "Waiting for MySQL to be ready on mysql:3306 using mysqladmin (up to 120s)..."
+          for i in $(seq 1 120); do
+            # use root user and workflow-provided password to get clearer error output
+            if mysqladmin ping -h mysql -P 3306 -u root -prootpassword --silent; then
               echo "MySQL is ready after $i seconds"
               break
             fi
-            if [ $i -eq 60 ]; then
-              echo "Timeout after 60 seconds waiting for mysql:3306"
+            if [ $i -eq 120 ]; then
+              echo "Timeout after 120 seconds waiting for mysql:3306"
+              echo "Dumping containers and logs for debugging"
+              docker ps --all || true
+              MYSQL_CONTAINER=$(docker ps -q --filter ancestor=mysql:8.0 || true)
+              if [ -n "$MYSQL_CONTAINER" ]; then
+                docker logs "$MYSQL_CONTAINER" || true
+              fi
               exit 1
             fi
             sleep 1
