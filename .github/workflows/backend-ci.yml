@@ -53,12 +53,17 @@ jobs:
         run: npm ci
         working-directory: ./backend
 
-      - name: Wait for MySQL
+      - name: Install mysql client
         run: |
-          echo "Waiting for MySQL to be ready on mysql:3306..."
+          sudo apt-get update -y
+          sudo apt-get install -y default-mysql-client
+        shell: bash
+
+      - name: Wait for MySQL (mysqladmin)
+        run: |
+          echo "Waiting for MySQL to be ready on mysql:3306 using mysqladmin..."
           for i in $(seq 1 60); do
-            # try to open TCP connection using bash /dev/tcp (available on runner)
-            if bash -c "cat < /dev/tcp/mysql/3306" >/dev/null 2>&1; then
+            if mysqladmin ping -h mysql -P 3306 --silent; then
               echo "MySQL is ready after $i seconds"
               break
             fi
