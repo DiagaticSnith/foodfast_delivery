@@ -75,24 +75,39 @@ jobs:
           fi
         shell: bash
 
-      - name: "Wait for MySQL (mysqladmin)"
+      - name: "Wait for MySQL (localhost health + auth checks)"
         run: |
           set -x
-          echo "Waiting for MySQL to be ready on mysql:3306 using mysqladmin (up to 120s)..."
+          echo "Waiting for MySQL on 127.0.0.1:3306 (up to 120s). Will try unauthenticated ping then authenticated check."
           for i in $(seq 1 120); do
-            # use root user and workflow-provided password to get clearer error output
-            if mysqladmin ping -h mysql -P 3306 -u root -prootpassword --silent; then
-              echo "MySQL is ready after $i seconds"
+            # First try a simple ping without credentials (server responding)
+            if mysqladmin ping -h 127.0.0.1 -P 3306 --silent 2>/tmp/mysqladmin.err; then
+              echo "MySQL responded (ping) after $i seconds"
               break
             fi
+
+            # If ping fails, try authenticating as the application user (ff_user)
+            if mysql -h 127.0.0.1 -P 3306 -u ff_user -pff_password -D foodfast -e 'SELECT 1' >/dev/null 2>/tmp/mysql_auth.err; then
+              echo "MySQL accepted application credentials after $i seconds"
+              break
+            fi
+
+            # show last few lines of both stderr files to help debug
+            echo "-- mysqladmin stderr --"
+            tail -n 50 /tmp/mysqladmin.err || true
+            echo "-- mysql auth stderr --"
+            tail -n 50 /tmp/mysql_auth.err || true
+
             if [ $i -eq 120 ]; then
-              echo "Timeout after 120 seconds waiting for mysql:3306"
+              echo "Timeout after 120 seconds waiting for 127.0.0.1:3306"
               echo "Dumping containers and logs for debugging"
               docker ps --all || true
               MYSQL_CONTAINER=$(docker ps -q --filter ancestor=mysql:8.0 || true)
               if [ -n "$MYSQL_CONTAINER" ]; then
                 docker logs "$MYSQL_CONTAINER" || true
               fi
+              echo "Final attempt: show mysql client error output"
+              mysql -h 127.0.0.1 -P 3306 -u ff_user -pff_password -D foodfast -e 'SELECT 1' || true
               exit 1
             fi
             sleep 1
