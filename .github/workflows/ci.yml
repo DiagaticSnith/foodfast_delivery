@@ -252,7 +252,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: warning
-        working-directory: ./frontend-admin
+        
 
       - name: Build
         run: npm run build
