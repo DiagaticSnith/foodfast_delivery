@@ -5,7 +5,8 @@
  * Customize this logic based on your webhook provider (e.g., Stripe, PayPal, etc.)
  */
 
-const getStripe = require('../utils/stripe');
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.ENDPOINT_SECRET;
 const { User, Cart, CartItem, Menu, Order, OrderDetail } = require('../models');
 
@@ -13,9 +14,9 @@ exports.handleWebhook = async (req, res) => {
     let event = req.body;
     // Stripe recommends verifying the signature for security
     if (endpointSecret && req.headers['stripe-signature']) {
-            try {
-                event = getStripe().webhooks.constructEvent(req.rawBody, req.headers['stripe-signature'], endpointSecret);
-            } catch (err) {
+        try {
+            event = stripe.webhooks.constructEvent(req.rawBody, req.headers['stripe-signature'], endpointSecret);
+        } catch (err) {
             console.error('Webhook signature verification failed:', err.message);
             console.error('Stripe-Signature:', req.headers['stripe-signature']);
             console.error('ENDPOINT_SECRET:', endpointSecret);
@@ -33,7 +34,7 @@ exports.handleWebhook = async (req, res) => {
             const userId = session.metadata.userId;
             const address = session.metadata.address;
             // Lấy line items
-                const lineItems = await getStripe().checkout.sessions.listLineItems(session.id);
+            const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
             // Tạo Order
             const order = await Order.create({
                 userId,

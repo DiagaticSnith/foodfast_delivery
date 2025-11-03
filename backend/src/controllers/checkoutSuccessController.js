@@ -1,4 +1,5 @@
-const getStripe = require('../utils/stripe');
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const { Order } = require('../models/Order');
 const { OrderDetail } = require('../models/OrderDetail');
 const { Menu } = require('../models/Menu');
@@ -7,8 +8,8 @@ exports.handleCheckoutSuccess = async (req, res) => {
   try {
     const session_id = req.query.session_id;
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
-  const session = await getStripe().checkout.sessions.retrieve(session_id);
-  const lineItems = await getStripe().checkout.sessions.listLineItems(session_id);
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const lineItems = await stripe.checkout.sessions.listLineItems(session_id);
     // Tạo Order
     const order = await Order.create({
       userId: session.metadata.userId,

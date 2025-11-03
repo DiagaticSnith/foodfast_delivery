@@ -1,4 +1,5 @@
-const getStripe = require('../utils/stripe');
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 exports.createCheckoutSession = async (req, res) => {
   try {
@@ -36,8 +37,8 @@ exports.createCheckoutSession = async (req, res) => {
       sessionConfig.customer_email = email;
     }
     
-  const session = await getStripe().checkout.sessions.create(sessionConfig);
-  res.json({ sessionId: session.id, url: session.url });
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    res.json({ sessionId: session.id, url: session.url });
   } catch (err) {
     console.error('Stripe error:', err);
     res.status(500).json({ error: err.message });

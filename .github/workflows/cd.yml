@@ -75,3 +75,7 @@ jobs:
           echo "Deploying service: $SERVICE_TO_DEPLOY to project $RAILWAY_PROJECT"
           # Use 'railway up' to build & deploy; --detach to not tail logs
           railway up --service "$SERVICE_TO_DEPLOY" --detach
+      - name: Run DB Migration
+        if: matrix.service == 'backend'
+        run: |
+          railway run --service backend npx sequelize db:migrate

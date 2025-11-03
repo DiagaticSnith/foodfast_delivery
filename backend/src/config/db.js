@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { Sequelize } = require('sequelize');
+const net = require('net');
 
 // Build a connection URI from common Railway-provided envs or fall back to individual vars
 function resolveDatabaseUri() {
