@@ -1,14 +1,13 @@
 name: backend-ci
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch: {}
 
 jobs:
   test:
+    name: Run Backend Tests
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -141,3 +140,74 @@ jobs:
         with:
           name: junit-report
           path: backend/jest-junit.xml
+  build_frontend:
+    name: Build Public Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Cache node modules (frontend)
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-frontend-${{ hashFiles('frontend/**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-frontend-
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+  # lint steps removed per request; keep build only
+
+      - name: Build
+        run: npm run build
+        working-directory: ./frontend
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+  build_admin_frontend:
+    name: Build Admin Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Cache node modules (frontend-admin)
+        uses: actions/cache@v4
+        with:
+          path: frontend-admin/node_modules
+          key: ${{ runner.os }}-node-admin-${{ hashFiles('frontend-admin/**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-admin-
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./frontend-admin
+
+      # lint steps removed per request; keep build only
+
+      - name: Build
+        run: npm run build
+        working-directory: ./frontend-admin
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-admin-dist
+          path: frontend-admin/dist
