@@ -22,6 +22,18 @@ export const api = axios.create({
   baseURL: resolvedBase || undefined,
 });
 
+// Ensure axios knows the runtime base if available at module initialization.
+try {
+  if (!api.defaults.baseURL && typeof window !== 'undefined') {
+    const runtimeInit = window.__FF_API_BASE__ || window.__RUNTIME_API_BASE__;
+    if (runtimeInit) {
+      const prefix = /^https?:\/\//i.test(runtimeInit) ? runtimeInit : `https://${runtimeInit}`;
+      api.defaults.baseURL = prefix;
+    }
+  }
+  console.log('api.defaults.baseURL (init):', api.defaults.baseURL);
+} catch (e) {}
+
 export const setAuthToken = (token) => {
   api.defaults.headers['Authorization'] = `Bearer ${token}`;
 };
