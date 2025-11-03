@@ -17,7 +17,7 @@ if (!resolvedBase && typeof window !== 'undefined') {
     if (!/^https?:\/\//i.test(resolvedBase)) resolvedBase = `https://${resolvedBase}`;
   }
 }
-
+console.log('>>> VITE_API_URL:', import.meta.env.VITE_API_URL);
 export const api = axios.create({
   baseURL: resolvedBase || undefined,
 });
