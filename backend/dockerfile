@@ -1,17 +1,12 @@
-FROM node:18-alpine AS build
+FROM node:20
+
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package*.json ./
-RUN npm ci
+COPY package.json ./
+RUN npm install
 
-# Copy source and build (if applicable)
 COPY . .
-RUN npm run build --if-present || true
 
-FROM node:18-alpine
-WORKDIR /app
-COPY --from=build /app .
-ENV NODE_ENV=production
 EXPOSE 5000
-CMD ["node", "server.js"]
+
+CMD ["npm", "start"]
