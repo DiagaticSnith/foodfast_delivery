@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+// Normalize VITE_API_URL: if user set it without scheme, prepend https://
+const rawBase = import.meta.env.VITE_API_URL || '';
+let normalizedBase = rawBase;
+if (rawBase && !/^https?:\/\//i.test(rawBase)) {
+  normalizedBase = `https://${rawBase}`;
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: normalizedBase || undefined,
 });
 
 export const setAuthToken = (token) => {

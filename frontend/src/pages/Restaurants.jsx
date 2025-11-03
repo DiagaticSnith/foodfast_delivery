@@ -23,9 +23,13 @@ const Restaurants = () => {
     const load = async () => {
       setLoading(true);
       setError('');
-      try {
+        try {
         const res = await api.get('/api/restaurants');
-        setRestaurants(res.data || []);
+        // Debug: log server response shape to help diagnose runtime errors
+        console.debug('Restaurants API response:', res && res.data);
+        // Ensure restaurants is always an array to avoid `.filter` errors
+        const payload = res && res.data;
+        setRestaurants(Array.isArray(payload) ? payload : (payload && payload.data && Array.isArray(payload.data) ? payload.data : []));
       } catch (e) {
         console.error('Lỗi tải nhà hàng:', e);
         setError('Không thể tải danh sách nhà hàng');
