@@ -1,10 +1,9 @@
-const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripe = require('../utils/stripe');
 
 exports.createPaymentIntent = async (req, res) => {
   try {
     const { amount } = req.body;
-    const paymentIntent = await stripe.paymentIntents.create({
+  const paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe dùng đơn vị cent
       currency: 'vnd',
       automatic_payment_methods: { enabled: true },

@@ -5,8 +5,7 @@ exports.assignDrone = async (req, res) => {
 exports.assignShipper = async (req, res) => {
   return res.status(410).json({ message: 'Deprecated: Hệ thống không dùng shipper trong PoC này.' });
 };
-const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripe = require('../utils/stripe');
 // Lấy order theo session_id Stripe
 exports.getOrderBySessionId = async (req, res) => {
   console.log('[DEBUG] Đã vào getOrderBySessionId, req.params:', req.params);
