@@ -163,35 +163,7 @@ jobs:
         run: npm ci
         working-directory: ./frontend
 
-      - name: Lint (collect report)
-        run: |
-          echo "Running ESLint and saving report to /tmp/frontend-lint.txt"
-          npm run lint --if-present > /tmp/frontend-lint.txt 2>&1
-          LINT_EXIT=$?
-          if [ $LINT_EXIT -ne 0 ]; then
-            echo "ESLint reported issues (exit code: $LINT_EXIT). The report is uploaded as artifact 'frontend-lint-report'."
-          else
-            echo "ESLint passed."
-          fi
-          # do not fail the job here; we want lint to be non-blocking but reported
-          exit 0
-        working-directory: ./frontend
-
-      - name: Upload frontend lint report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-lint-report
-          path: /tmp/frontend-lint.txt
-
-      - name: Annotate ESLint with reviewdog
-        uses: reviewdog/action-eslint@v1
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: warning
-  # run in frontend folder
+  # lint steps removed per request; keep build only
 
       - name: Build
         run: npm run build
@@ -227,34 +199,7 @@ jobs:
         run: npm ci
         
 
-      - name: Lint (collect report)
-        run: |
-          echo "Running ESLint and saving report to /tmp/frontend-admin-lint.txt"
-          npm run lint --if-present > /tmp/frontend-admin-lint.txt 2>&1
-          LINT_EXIT=$?
-          if [ $LINT_EXIT -ne 0 ]; then
-            echo "ESLint reported issues (exit code: $LINT_EXIT). The report is uploaded as artifact 'frontend-admin-lint-report'."
-          else
-            echo "ESLint passed."
-          fi
-          exit 0
-        working-directory: ./frontend-admin
-
-      - name: Upload frontend-admin lint report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-admin-lint-report
-          path: /tmp/frontend-admin-lint.txt
-
-      - name: Annotate ESLint with reviewdog (admin)
-        uses: reviewdog/action-eslint@v1
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: warning
-        
+      # lint steps removed per request; keep build only
 
       - name: Build
         run: npm run build
