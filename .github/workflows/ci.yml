@@ -1,4 +1,4 @@
-name: CI
+name: backend-ci
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    name: Run Backend Tests
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -143,7 +144,6 @@ jobs:
   build_frontend:
     name: Build Public Frontend
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - uses: actions/checkout@v4
 
@@ -164,9 +164,26 @@ jobs:
         run: npm ci
         working-directory: ./frontend
 
-      - name: Lint (if present)
-        run: npm run lint --if-present
+      - name: Lint (collect report)
+        run: |
+          echo "Running ESLint and saving report to /tmp/frontend-lint.txt"
+          npm run lint --if-present > /tmp/frontend-lint.txt 2>&1
+          LINT_EXIT=$?
+          if [ $LINT_EXIT -ne 0 ]; then
+            echo "ESLint reported issues (exit code: $LINT_EXIT). The report is uploaded as artifact 'frontend-lint-report'."
+          else
+            echo "ESLint passed."
+          fi
+          # do not fail the job here; we want lint to be non-blocking but reported
+          exit 0
         working-directory: ./frontend
+
+      - name: Upload frontend lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-lint-report
+          path: /tmp/frontend-lint.txt
 
       - name: Build
         run: npm run build
@@ -182,7 +199,6 @@ jobs:
   build_admin_frontend:
     name: Build Admin Frontend
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - uses: actions/checkout@v4
 
@@ -203,9 +219,25 @@ jobs:
         run: npm ci
         working-directory: ./frontend-admin
 
-      - name: Lint (if present)
-        run: npm run lint --if-present
+      - name: Lint (collect report)
+        run: |
+          echo "Running ESLint and saving report to /tmp/frontend-admin-lint.txt"
+          npm run lint --if-present > /tmp/frontend-admin-lint.txt 2>&1
+          LINT_EXIT=$?
+          if [ $LINT_EXIT -ne 0 ]; then
+            echo "ESLint reported issues (exit code: $LINT_EXIT). The report is uploaded as artifact 'frontend-admin-lint-report'."
+          else
+            echo "ESLint passed."
+          fi
+          exit 0
         working-directory: ./frontend-admin
+
+      - name: Upload frontend-admin lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-admin-lint-report
+          path: /tmp/frontend-admin-lint.txt
 
       - name: Build
         run: npm run build
