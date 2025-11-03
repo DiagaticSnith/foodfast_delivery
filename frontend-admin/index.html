@@ -5,13 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React</title>
+    <!-- Load runtime-config as early as possible so the built assets can read it
+         before executing. This ensures the runtime base is available before
+         the app bundle runs. -->
+    <script src="/runtime-config.js"></script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Runtime config is generated at container start and injected here so the app
-         can read a backend URL without needing a rebuild. The script defines
-         window.__FF_API_BASE__ or window.__RUNTIME_API_BASE__. -->
-    <script src="/runtime-config.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
