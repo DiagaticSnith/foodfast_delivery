@@ -13,11 +13,15 @@ const OrderAdmin = () => {
 
   const fetchOrders = async () => {
     const res = await axios.get('/api/orders');
-    setOrders(res.data);
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.orders) ? res.data.orders : []);
+    if (!Array.isArray(res.data)) console.error('fetchOrders: expected array, got', res.data);
+    setOrders(data);
   };
   const fetchUsers = async () => {
     const res = await axios.get('/api/users');
-    setUsers(res.data);
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.users) ? res.data.users : []);
+    if (!Array.isArray(res.data)) console.error('fetchUsers (OrderAdmin): expected array, got', res.data);
+    setUsers(data);
   };
 
   useEffect(() => { fetchOrders(); fetchUsers(); }, []);

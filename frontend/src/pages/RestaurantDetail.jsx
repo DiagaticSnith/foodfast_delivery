@@ -92,17 +92,17 @@ const RestaurantDetail = () => {
         ) : (
           <div className="grid-auto-260">
             {filteredMenus.map(item => (
-            <div key={item.id} className="related-card is-clickable" onClick={()=>navigate(`/menu/${item.id}`)}>
-              <div className="related-cover">
+            <div key={item.id} className="related-item is-clickable" onClick={()=>navigate(`/menu/${item.id}`)}>
+              <div className="related-image">
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt={item.name} onError={(e)=>{e.currentTarget.style.display='none';}} />
                 ) : (
                   <div className="rd__coverph">🍽️</div>
                 )}
               </div>
-              <div className="related-body">
+              <div className="related-content">
                 <div className="related-name" title={item.name}>{item.name}</div>
-                <div className="related-price">{Number(item.price).toLocaleString()}₫</div>
+                <div className="related-price"><span className="price-text">{Number(item.price).toLocaleString()}₫</span></div>
               </div>
             </div>
             ))}

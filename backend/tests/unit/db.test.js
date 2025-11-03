@@ -20,6 +20,9 @@ describe('src/config/db connectDB', () => {
   });
 
   test('authenticate succeeds and query succeeds -> logs connected', async () => {
+    // speed up retries in tests to avoid long exponential backoff
+    process.env.DB_CONNECT_RETRIES = '0';
+    process.env.DB_CONNECT_RETRY_DELAY_MS = '1';
     // Provide a mock Sequelize constructor returning an object with desired behavior
     jest.doMock('sequelize', () => ({
       Sequelize: function () {
@@ -38,6 +41,9 @@ describe('src/config/db connectDB', () => {
   });
 
   test('authenticate succeeds but query fails -> warns but does not exit', async () => {
+    // speed up retries in tests to avoid long exponential backoff
+    process.env.DB_CONNECT_RETRIES = '0';
+    process.env.DB_CONNECT_RETRY_DELAY_MS = '1';
     jest.doMock('sequelize', () => ({
       Sequelize: function () {
         this.authenticate = jest.fn().mockResolvedValue();
@@ -55,6 +61,9 @@ describe('src/config/db connectDB', () => {
   });
 
   test('authenticate fails -> logs error and exits', async () => {
+    // speed up retries in tests to avoid long exponential backoff
+    process.env.DB_CONNECT_RETRIES = '0';
+    process.env.DB_CONNECT_RETRY_DELAY_MS = '1';
     jest.doMock('sequelize', () => ({
       Sequelize: function () {
         this.authenticate = jest.fn().mockRejectedValue(new Error('auth fail'));

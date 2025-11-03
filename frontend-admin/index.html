@@ -5,6 +5,49 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React</title>
+    <!-- Load runtime-config as early as possible so the built assets can read it
+         before executing. This ensures the runtime base is available before
+         the app bundle runs. -->
+    <script src="/runtime-config.js"></script>
+    <!-- Defensive shim: rewrite any relative /api requests to the runtime-config base
+         This runs before the app bundle so legacy code or early fetch/XHR calls
+         that use relative URLs will be rewritten to the correct backend. -->
+    <script>
+      (function(){
+        try {
+          const getBase = () => (window.__FF_API_BASE__ || window.__RUNTIME_API_BASE__ || '');
+          // Patch fetch
+          const _fetch = window.fetch;
+          window.fetch = function(input, init){
+            try {
+              let url = (typeof input === 'string') ? input : (input && input.url);
+              if (typeof url === 'string' && url.indexOf('/api') === 0) {
+                const base = getBase();
+                if (base) {
+                  const full = base.replace(/\/$/, '') + url;
+                  if (typeof input === 'string') input = full; else input = Object.assign({}, input, { url: full });
+                }
+              }
+            } catch (e) {}
+            return _fetch.apply(this, [input, init]);
+          };
+
+          // Patch XHR
+          const _open = XMLHttpRequest.prototype.open;
+          XMLHttpRequest.prototype.open = function(method, url, ...rest){
+            try{
+              if (typeof url === 'string' && url.indexOf('/api') === 0) {
+                const base = getBase();
+                if (base) url = base.replace(/\/$/, '') + url;
+              }
+            } catch(e){}
+            return _open.call(this, method, url, ...rest);
+          };
+        } catch(e) {
+          // ignore
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

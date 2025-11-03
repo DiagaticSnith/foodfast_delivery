@@ -1,8 +1,38 @@
 import axios from 'axios';
 
+// Normalize VITE_API_URL: if user set it without scheme, prepend https://
+const rawBase = import.meta.env.VITE_API_URL || '';
+let normalizedBase = rawBase;
+if (rawBase && !/^https?:\/\//i.test(rawBase)) {
+  normalizedBase = `https://${rawBase}`;
+}
+
+// Runtime fallback: allow injecting a base URL at runtime by setting
+// window.__FF_API_BASE__ (useful if the app was built without VITE_API_URL).
+let resolvedBase = normalizedBase;
+if (!resolvedBase && typeof window !== 'undefined') {
+  const runtime = window.__FF_API_BASE__ || window.__RUNTIME_API_BASE__;
+  if (runtime) {
+    resolvedBase = runtime;
+    if (!/^https?:\/\//i.test(resolvedBase)) resolvedBase = `https://${resolvedBase}`;
+  }
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: resolvedBase || undefined,
 });
+
+// Ensure axios knows the runtime base if available at module initialization.
+try {
+  if (!api.defaults.baseURL && typeof window !== 'undefined') {
+    const runtimeInit = window.__FF_API_BASE__ || window.__RUNTIME_API_BASE__;
+    if (runtimeInit) {
+      const prefix = /^https?:\/\//i.test(runtimeInit) ? runtimeInit : `https://${runtimeInit}`;
+      api.defaults.baseURL = prefix;
+    }
+  }
+  console.log('api.defaults.baseURL (init):', api.defaults.baseURL);
+} catch (e) {}
 
 export const setAuthToken = (token) => {
   api.defaults.headers['Authorization'] = `Bearer ${token}`;
@@ -17,6 +47,25 @@ api.interceptors.request.use((config) => {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
   } catch {}
+  // Fail-fast when API base is missing to avoid requests hanging against the static host.
+  try {
+    const baseIsMissing = (!api.defaults.baseURL && !api.defaults.baseURL === false && !api.defaults.baseURL);
+    if (baseIsMissing && config && config.url && config.url.startsWith('/api')) {
+      // try to use runtime fallback if available
+      if (typeof window !== 'undefined') {
+        const runtime = window.__FF_API_BASE__ || window.__RUNTIME_API_BASE__;
+        if (runtime) {
+          const prefix = /^https?:\/\//i.test(runtime) ? runtime : `https://${runtime}`;
+          config.url = prefix.replace(/\/$/, '') + config.url;
+        } else {
+          console.error('Missing API base URL: set VITE_API_URL at build time or set window.__FF_API_BASE__ at runtime.');
+          return Promise.reject(new Error('Missing API base URL'));
+        }
+      }
+    }
+  } catch (e) {
+    // ignore and continue
+  }
   return config;
 });
 
