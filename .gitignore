@@ -1,3 +1,5 @@
 .env
 .env.example
 .vscode/*
+/backend/coverage
+/backend/reports
