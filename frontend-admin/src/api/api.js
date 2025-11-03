@@ -1,7 +1,25 @@
 import axios from 'axios';
 
+// Normalize VITE_API_URL: if user set it without scheme, prepend https://
+const rawBase = import.meta.env.VITE_API_URL || '';
+let normalizedBase = rawBase;
+if (rawBase && !/^https?:\/\//i.test(rawBase)) {
+  normalizedBase = `https://${rawBase}`;
+}
+
+// Runtime fallback: allow injecting a base URL at runtime by setting
+// window.__FF_API_BASE__ (useful if the app was built without VITE_API_URL).
+let resolvedBase = normalizedBase;
+if (!resolvedBase && typeof window !== 'undefined') {
+  const runtime = window.__FF_API_BASE__ || window.__RUNTIME_API_BASE__;
+  if (runtime) {
+    resolvedBase = runtime;
+    if (!/^https?:\/\//i.test(resolvedBase)) resolvedBase = `https://${resolvedBase}`;
+  }
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: resolvedBase || undefined,
 });
 
 export const setAuthToken = (token) => {
