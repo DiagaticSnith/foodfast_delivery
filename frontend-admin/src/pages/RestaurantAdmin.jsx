@@ -35,7 +35,9 @@ const RestaurantAdmin = () => {
   const fetchRestaurants = async () => {
     const q = showHiddenOnly ? '?status=hidden' : '';
     const res = await axios.get(`/api/restaurants${q}`);
-    setRestaurants(res.data);
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.restaurants) ? res.data.restaurants : []);
+    if (!Array.isArray(res.data)) console.error('fetchRestaurants: expected array, got', res.data);
+    setRestaurants(data);
   };
 
   useEffect(() => { fetchRestaurants(); }, [showHiddenOnly]);
@@ -91,7 +93,9 @@ const RestaurantAdmin = () => {
   const fetchMenusFor = async (restaurantId, hiddenOnlyFlag = false) => {
     const q = hiddenOnlyFlag ? `&status=hidden` : '';
     const res = await api.get(`/api/menus?restaurantId=${restaurantId}${q}`);
-    setMenus(res.data);
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.menus) ? res.data.menus : []);
+    if (!Array.isArray(res.data)) console.error('fetchMenusFor: expected array, got', res.data);
+    setMenus(data);
   };
 
   const toggleMenuHiddenOnly = async () => {

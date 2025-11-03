@@ -31,11 +31,15 @@ const MenuAdmin = () => {
     // If we're viewing menus for a specific restaurant or requested hidden-only, include hidden items as well
     if (restaurantId || showOnlyHidden) params.includeHidden = 1;
     const res = await api.get('/api/menus', { params });
-    setMenus(res.data);
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.menus) ? res.data.menus : []);
+    if (!Array.isArray(res.data)) console.error('fetchMenus: expected array, got', res.data);
+    setMenus(data);
   };
   const fetchRestaurants = async () => {
     const res = await api.get('/api/restaurants');
-    setRestaurants(res.data);
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.restaurants) ? res.data.restaurants : []);
+    if (!Array.isArray(res.data)) console.error('fetchRestaurants (MenuAdmin): expected array, got', res.data);
+    setRestaurants(data);
   };
 
   useEffect(() => { fetchMenus(); fetchRestaurants(); }, []);
