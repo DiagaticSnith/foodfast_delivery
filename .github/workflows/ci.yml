@@ -140,7 +140,6 @@ jobs:
         with:
           name: junit-report
           path: backend/jest-junit.xml
-
   build_frontend:
     name: Build Public Frontend
     runs-on: ubuntu-latest
@@ -184,6 +183,15 @@ jobs:
         with:
           name: frontend-lint-report
           path: /tmp/frontend-lint.txt
+
+      - name: Annotate ESLint with reviewdog
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+        # run in frontend folder
+        working-directory: ./frontend
 
       - name: Build
         run: npm run build
@@ -238,6 +246,14 @@ jobs:
         with:
           name: frontend-admin-lint-report
           path: /tmp/frontend-admin-lint.txt
+
+      - name: Annotate ESLint with reviewdog (admin)
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+        working-directory: ./frontend-admin
 
       - name: Build
         run: npm run build
