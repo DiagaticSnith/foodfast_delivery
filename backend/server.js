@@ -59,18 +59,8 @@ app.use('/api', reviewRoutes);
 // Error handling
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
-
-	// Don't run the background dispatcher in unit tests or when explicitly disabled.
-	// Tests often run without a live database and starting the dispatcher causes
-	// noisy errors and failures (it queries DB periodically). Guard with
-	// NODE_ENV !== 'test' and an override DISABLE_DISPATCHER=1.
-	const shouldStartDispatcher = process.env.NODE_ENV !== 'test' && process.env.DISABLE_DISPATCHER !== '1';
-	if (shouldStartDispatcher) {
-		startDroneDispatcher({ intervalMs: 4000, burst: 5 });
-	} else {
-		console.log('[Dispatcher] Skipped starting drone dispatcher (test or DISABLE_DISPATCHER=1)');
-	}
+	startDroneDispatcher({ intervalMs: 4000, burst: 5 });
 });
