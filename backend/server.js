@@ -59,7 +59,8 @@ app.use('/api', reviewRoutes);
 // Error handling
 app.use(errorHandler);
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
 	startDroneDispatcher({ intervalMs: 4000, burst: 5 });
