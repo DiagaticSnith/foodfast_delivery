@@ -7,9 +7,6 @@ RUN npm install
 
 COPY . .
 
-# demo: ép build fail
-RUN node -e "process.exit(1)"
-
 EXPOSE 5000
 
 CMD ["npm", "start"]
