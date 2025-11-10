@@ -72,27 +72,33 @@ const OrderTracking = () => {
   };
 
   // Initialize Google Map
+  // Initialize map on mount. Use requestAnimationFrame to wait for DOM, avoid using ref.current in deps.
   useEffect(() => {
-    console.log('Map init useEffect - mapRef.current:', !!mapRef.current, 'googleMapRef.current:', !!googleMapRef.current);
-    
-    if (!mapRef.current) {
-      console.log('mapRef.current is null, will retry on next render');
-      // Set a small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        if (mapRef.current && !googleMapRef.current) {
-          initMap();
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-    
-    if (googleMapRef.current) {
-      console.log('Google Maps already initialized');
-      return;
-    }
+    let cancelled = false;
 
-    initMap();
-  }, [mapRef.current]);
+    const waitForDomAndInit = () => {
+      // If element not ready yet, retry next frame
+      if (!mapRef.current) {
+        // debug log to help track mounting timing
+        console.log('Map init: mapRef not yet attached to DOM, retrying...');
+        requestAnimationFrame(waitForDomAndInit);
+        return;
+      }
+
+      if (cancelled) return;
+
+      if (googleMapRef.current) {
+        console.log('Map init: Google Maps already initialized');
+        return;
+      }
+
+      initMap();
+    };
+
+    waitForDomAndInit();
+
+    return () => { cancelled = true; };
+  }, []);
 
   const initMap = () => {
     // Check if Google Maps script already exists
@@ -113,31 +119,83 @@ const OrderTracking = () => {
     }
 
   console.log('Loading Google Maps script...');
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCGacFvdCZP5AZSaQZ10TRtG30RDXftb1U&v=weekly&region=VN&language=vi`;
-    script.async = true;
-    script.onload = () => {
-      console.log('Google Maps script loaded');
+  // Avoid adding duplicate script tags
+  const existing = Array.from(document.getElementsByTagName('script')).find(s => s.src && s.src.includes('maps.googleapis.com'));
+  if (existing) {
+    // If script already present but google not ready yet, attach onload or try init
+    if (window.google && window.google.maps) {
+      console.log('Google Maps script already present and loaded');
       try {
-        if (mapRef.current) {
-          googleMapRef.current = new window.google.maps.Map(mapRef.current, {
-            center: SAMPLE_LOCATIONS.center,
-            zoom: 14,
-            mapTypeId: 'roadmap',
-          });
-          setMapLoaded(true);
-          console.log('Google Maps initialized successfully');
-        }
+        googleMapRef.current = new window.google.maps.Map(mapRef.current, {
+          center: SAMPLE_LOCATIONS.center,
+          zoom: 14,
+          mapTypeId: 'roadmap',
+        });
+        setMapLoaded(true);
+        console.log('Google Maps initialized successfully (existing script)');
       } catch (err) {
-        console.error('Error initializing Google Maps:', err);
+        console.error('Error initializing Google Maps from existing script:', err);
         setError('Lỗi khi tải bản đồ. Vui lòng kiểm tra API key.');
       }
-    };
-    script.onerror = () => {
-      console.error('Failed to load Google Maps script');
-      setError('Không thể tải Google Maps. Vui lòng kiểm tra kết nối mạng hoặc API key.');
-    };
-    document.head.appendChild(script);
+    } else {
+      console.log('Google Maps script tag exists but google object not ready yet, attaching onload');
+      existing.addEventListener('load', () => {
+        try {
+          if (mapRef.current && window.google && window.google.maps) {
+            googleMapRef.current = new window.google.maps.Map(mapRef.current, {
+              center: SAMPLE_LOCATIONS.center,
+              zoom: 14,
+              mapTypeId: 'roadmap',
+            });
+            setMapLoaded(true);
+            console.log('Google Maps initialized successfully after existing script load');
+          }
+        } catch (err) {
+          console.error('Error initializing Google Maps after existing script load:', err);
+          setError('Lỗi khi tải bản đồ. Vui lòng kiểm tra API key.');
+        }
+      });
+    }
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCGacFvdCZP5AZSaQZ10TRtG30RDXftb1U&v=weekly&region=VN&language=vi`;
+  script.async = true;
+  script.defer = true;
+  let attached = false;
+  script.onload = () => {
+    attached = true;
+    console.log('Google Maps script loaded');
+    try {
+      if (mapRef.current && window.google && window.google.maps) {
+        googleMapRef.current = new window.google.maps.Map(mapRef.current, {
+          center: SAMPLE_LOCATIONS.center,
+          zoom: 14,
+          mapTypeId: 'roadmap',
+        });
+        setMapLoaded(true);
+        console.log('Google Maps initialized successfully');
+      } else {
+        console.warn('Google Maps loaded but mapRef not available or google.maps missing');
+      }
+    } catch (err) {
+      console.error('Error initializing Google Maps:', err);
+      setError('Lỗi khi tải bản đồ. Vui lòng kiểm tra API key.');
+    }
+  };
+  script.onerror = (e) => {
+    console.error('Failed to load Google Maps script', e);
+    setError('Không thể tải Google Maps. Vui lòng kiểm tra kết nối mạng hoặc API key.');
+  };
+  document.head.appendChild(script);
+  // cleanup: remove script only if we appended it here
+  return () => {
+    try {
+      if (!attached) return;
+      // keep the script in DOM to reuse across pages; do not remove
+    } catch (e) {}
+  };
   };
 
   // Helper: geocode address -> { lat, lng }
