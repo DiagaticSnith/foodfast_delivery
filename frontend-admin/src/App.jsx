@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import DroneMonitoring from './pages/DroneMonitoring';
 import MenuAdmin from './pages/MenuAdmin';
+import RestaurantReviews from './pages/RestaurantReviews';
 
 
 function LogoutAndRedirect({ setUser }) {
@@ -48,6 +49,7 @@ function App() {
           <Route path="/" element={<LogoutAndRedirect setUser={setUser} />} />
           <Route path="/login" element={<Login setUser={setUser} />}/>
           <Route path="/admin/menus" element={<MenuAdmin />} />
+          <Route path="/admin/reviews" element={<RestaurantReviews />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/drone-monitoring" element={<DroneMonitoring />} />

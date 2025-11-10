@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import '../styles/admin.css';
 import { DroneSimulator, generateRoute, SAMPLE_LOCATIONS } from '../utils/droneSimulator';
+import RestaurantReviews from './RestaurantReviews';
 import { useToast } from '../components/ToastProvider';
 
 const RestaurantDashboard = () => {
@@ -342,6 +343,13 @@ const RestaurantDashboard = () => {
           <div className="tab-icon">📊</div>
           <span className="tab-text">Doanh thu</span>
         </button>
+        <button 
+          onClick={()=>changeTab('reviews')} 
+          className={`restaurant-tab ${tab==='reviews' ? 'restaurant-tab--active' : ''}`}
+        >
+          <div className="tab-icon">💬</div>
+          <span className="tab-text">Đánh giá</span>
+        </button>
         
         <button 
           onClick={()=>changeTab('menu')} 
@@ -478,6 +486,12 @@ const RestaurantDashboard = () => {
               Chưa có dữ liệu doanh thu. Hoàn thành một vài đơn hàng để xem biểu đồ!
             </div>
           )}
+        </div>
+      )}
+
+      {tab==='reviews' && (
+        <div>
+          <RestaurantReviews />
         </div>
       )}
 

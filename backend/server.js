@@ -32,7 +32,13 @@ app.use('/api/webhook', express.raw({ type: 'application/json' }), (req, res, ne
 	req.rawBody = req.body;
 	next();
 });
-app.use(express.json()); // Parse JSON requests
+// Parse JSON requests and keep a copy of the raw body for debugging malformed JSON
+app.use(express.json({
+	verify: (req, res, buf) => {
+		// store raw body (string) so error handlers can log it when parse fails
+		try { req.rawBody = buf.toString(); } catch (e) { req.rawBody = undefined; }
+	}
+}));
 
 // Kết nối database
 connectDB();
@@ -57,6 +63,22 @@ app.use('/api/checkout', checkoutSuccessRoutes);
 app.use('/api', reviewRoutes);
 
 // Error handling
+// Catch body-parser / JSON parse errors and return a 400 with diagnostic logging
+app.use((err, req, res, next) => {
+	if (err && err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+		// Log useful context to help correlate with deployment logs (request id from proxy if present)
+		console.error('Malformed JSON in request body', {
+			message: err.message,
+			url: req.originalUrl,
+			method: req.method,
+			headers: req.headers,
+			rawBody: req.rawBody
+		});
+		return res.status(400).json({ message: 'Malformed JSON in request body' });
+	}
+	next(err);
+});
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
