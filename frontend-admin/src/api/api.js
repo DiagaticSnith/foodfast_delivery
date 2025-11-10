@@ -120,6 +120,8 @@ export const reviewAPI = {
   postReview: (menuId, body) => api.post(`/api/menus/${menuId}/reviews`, body),
   deleteReview: (id) => api.delete(`/api/reviews/${id}`),
   setStatus: (id, status) => api.put(`/api/reviews/${id}/status`, { status }),
+  // helper for frontend page: reply endpoint may not be implemented on backend in all branches
+  postReply: (id, body) => api.post(`/api/reviews/${id}/reply`, body),
 };
 
 export const paymentAPI = {

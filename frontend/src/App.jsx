@@ -10,6 +10,7 @@ import { ToastProvider } from './components/ToastProvider';
 import Header from './components/Header';
 import Home from './pages/Home';
 import RestaurantDashboard from './pages/RestaurantDashboard';
+import RestaurantReviews from './pages/RestaurantReviews';
 import CartPage from './pages/CartPage';
 import Checkout from './pages/Checkout';
 import OrderHistory from './pages/OrderHistory';
@@ -60,6 +61,7 @@ function App() {
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/menus" element={<Menus />} />
           <Route path="/restaurant-dashboard" element={<RestaurantDashboard />} />
+          <Route path="/restaurant-reviews" element={<RestaurantReviews />} />
           <Route path="/user-info" element={<UserInfo user={user} setUser={setUser} />} />
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
           <Route path="/menu/:id" element={<MenuDetail />} />
