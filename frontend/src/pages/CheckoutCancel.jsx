@@ -19,12 +19,6 @@ function CheckoutCancel() {
         
         <div className="cancel-actions">
           <button 
-            className="btn-primary"
-            onClick={() => navigate('/checkout')}
-          >
-            🔄 Thử lại thanh toán
-          </button>
-          <button 
             className="btn-secondary"
             onClick={() => navigate('/cart')}
           >
