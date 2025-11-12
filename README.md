@@ -23,7 +23,7 @@ FoodFast là một nền tảng đặt món cho phép khách hàng duyệt menu,
 - Database: MySQL (migrations tại `database/migrations`)
 
 ## Yêu cầu
-- Node.js (v16+)
+- Node.js (v20+)
 - npm hoặc yarn
 - Docker 
 
