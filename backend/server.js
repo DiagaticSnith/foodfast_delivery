@@ -40,6 +40,43 @@ app.use(express.json({
 	}
 }));
 
+// Prometheus metrics
+const { client: promClient, httpRequestDurationSeconds, httpRequestTotal } = require('./src/metrics');
+
+// Request metrics middleware
+app.use((req, res, next) => {
+	const start = process.hrtime();
+	res.on('finish', () => {
+		const diff = process.hrtime(start);
+		const durationSeconds = diff[0] + diff[1] / 1e9;
+		// route may be undefined for middleware-level requests; fall back to path
+		const route = (req.route && req.route.path) ? req.route.path : req.path;
+		httpRequestDurationSeconds
+			.labels(req.method, route, String(res.statusCode))
+			.observe(durationSeconds);
+		httpRequestTotal
+			.labels(req.method, route, String(res.statusCode))
+			.inc();
+	});
+	next();
+});
+
+// Expose metrics endpoint (optional token protection via METRICS_TOKEN)
+app.get('/metrics', async (req, res) => {
+	try {
+		if (process.env.METRICS_TOKEN) {
+			const token = req.get('x-metrics-token') || req.query.token;
+			if (!token || token !== process.env.METRICS_TOKEN) {
+				return res.status(403).send('forbidden');
+			}
+		}
+		res.set('Content-Type', promClient.register.contentType);
+		res.end(await promClient.register.metrics());
+	} catch (err) {
+		res.status(500).end(err.message);
+	}
+});
+
 // Kết nối database
 connectDB();
 
