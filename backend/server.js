@@ -40,42 +40,51 @@ app.use(express.json({
 	}
 }));
 
-// Prometheus metrics
-const { client: promClient, httpRequestDurationSeconds, httpRequestTotal } = require('./src/metrics');
+// ---- Prometheus metrics (minimal) ----
+let metricsAvailable = false;
+try {
+	const { register, httpRequestDurationSeconds, httpRequestTotal } = require('./src/metrics');
+	metricsAvailable = true;
 
-// Request metrics middleware
-app.use((req, res, next) => {
-	const start = process.hrtime();
-	res.on('finish', () => {
-		const diff = process.hrtime(start);
-		const durationSeconds = diff[0] + diff[1] / 1e9;
-		// route may be undefined for middleware-level requests; fall back to path
-		const route = (req.route && req.route.path) ? req.route.path : req.path;
-		httpRequestDurationSeconds
-			.labels(req.method, route, String(res.statusCode))
-			.observe(durationSeconds);
-		httpRequestTotal
-			.labels(req.method, route, String(res.statusCode))
-			.inc();
-	});
-	next();
-});
-
-// Expose metrics endpoint (optional token protection via METRICS_TOKEN)
-app.get('/metrics', async (req, res) => {
-	try {
-		if (process.env.METRICS_TOKEN) {
-			const token = req.get('x-metrics-token') || req.query.token;
-			if (!token || token !== process.env.METRICS_TOKEN) {
-				return res.status(403).send('forbidden');
+	// request metrics middleware
+	app.use((req, res, next) => {
+		const start = process.hrtime();
+		res.on('finish', () => {
+			try {
+				const diff = process.hrtime(start);
+				const durationSeconds = diff[0] + diff[1] / 1e9;
+				// prefer route pattern when available; fallback to path
+				const route = (req.baseUrl || '') + (req.route && req.route.path ? req.route.path : req.path);
+				httpRequestDurationSeconds.labels(req.method, route, String(res.statusCode)).observe(durationSeconds);
+				httpRequestTotal.labels(req.method, route, String(res.statusCode)).inc();
+			} catch (e) {
+				// metric recording must not break app
+				// eslint-disable-next-line no-console
+				console.warn('metrics error', e && e.message);
 			}
+		});
+		next();
+	});
+
+	// expose /metrics (optional token protection via METRICS_TOKEN)
+	app.get('/metrics', async (req, res) => {
+		try {
+			if (process.env.METRICS_TOKEN) {
+				const token = req.get('x-metrics-token') || req.query.token;
+				if (!token || token !== process.env.METRICS_TOKEN) return res.status(403).send('forbidden');
+			}
+			res.set('Content-Type', register.contentType);
+			res.end(await register.metrics());
+		} catch (err) {
+			res.status(500).end(err && err.message ? err.message : 'metrics error');
 		}
-		res.set('Content-Type', promClient.register.contentType);
-		res.end(await promClient.register.metrics());
-	} catch (err) {
-		res.status(500).end(err.message);
-	}
-});
+	});
+} catch (err) {
+	// prom-client not installed or metrics file missing — continue without metrics
+	// eslint-disable-next-line no-console
+	console.info('Prometheus metrics not available:', err && err.message);
+}
+// ---- end metrics ----
 
 // Kết nối database
 connectDB();
