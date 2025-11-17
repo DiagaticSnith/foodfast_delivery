@@ -22,6 +22,12 @@ exports.handleWebhook = async (req, res) => {
             console.error('ENDPOINT_SECRET:', endpointSecret);
             console.error('typeof req.rawBody:', typeof req.rawBody);
             console.error('req.rawBody (first 200 bytes):', req.rawBody && req.rawBody.slice ? req.rawBody.slice(0,200) : req.rawBody);
+            try {
+                const { stripeErrors } = require('../metrics');
+                if (stripeErrors && typeof stripeErrors.labels === 'function') stripeErrors.labels('webhook_signature').inc();
+            } catch (e) {
+                console.warn('Could not increment stripeErrors metric for webhook signature', e && e.message);
+            }
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
     }
@@ -43,6 +49,14 @@ exports.handleWebhook = async (req, res) => {
                 status: 'Pending',
                 sessionId: session.id,
             });
+            // Business metrics: increment orders and checkout success for webhook-created orders
+            try {
+                const { ordersCreated, checkoutSuccess } = require('../metrics');
+                if (ordersCreated && typeof ordersCreated.labels === 'function') ordersCreated.labels('webhook').inc();
+                if (checkoutSuccess && typeof checkoutSuccess.labels === 'function') checkoutSuccess.labels('webhook').inc();
+            } catch (e) {
+                console.warn('Could not increment business metrics in webhook', e && e.message);
+            }
             // Tạo OrderDetails
                         for (const item of lineItems.data) {
                                 let menuId = null;
@@ -77,6 +91,12 @@ exports.handleWebhook = async (req, res) => {
             console.log('Order created and cart cleared for user', userId);
         } catch (err) {
             console.error('Error processing checkout.session.completed:', err);
+            try {
+                const { stripeErrors } = require('../metrics');
+                if (stripeErrors && typeof stripeErrors.labels === 'function') stripeErrors.labels('webhook_processing').inc();
+            } catch (e) {
+                console.warn('Could not increment stripeErrors metric for webhook processing', e && e.message);
+            }
             return res.status(500).json({ error: err.message });
         }
     }

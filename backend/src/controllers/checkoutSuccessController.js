@@ -17,6 +17,14 @@ exports.handleCheckoutSuccess = async (req, res) => {
       address: session.metadata.address,
   status: 'Pending',
     });
+    // Business metrics: orders created and checkout success
+    try {
+      const { ordersCreated, checkoutSuccess } = require('../metrics');
+      if (ordersCreated && typeof ordersCreated.labels === 'function') ordersCreated.labels('stripe').inc();
+      if (checkoutSuccess && typeof checkoutSuccess.labels === 'function') checkoutSuccess.labels('stripe').inc();
+    } catch (e) {
+      console.warn('Could not increment business metrics for checkout success', e && e.message);
+    }
     // Tạo OrderDetails
     for (const item of lineItems.data) {
       // Tìm menuId theo tên món (hoặc truyền metadata menuId khi tạo session Stripe)
@@ -31,6 +39,12 @@ exports.handleCheckoutSuccess = async (req, res) => {
     res.json({ orderId: order.id });
   } catch (err) {
     console.error('Checkout success error:', err);
+    try {
+      const { stripeErrors } = require('../metrics');
+      if (stripeErrors && typeof stripeErrors.labels === 'function') stripeErrors.labels('checkout_success').inc();
+    } catch (e) {
+      console.warn('Could not increment stripeErrors metric for checkout success', e && e.message);
+    }
     res.status(500).json({ error: err.message });
   }
 };
