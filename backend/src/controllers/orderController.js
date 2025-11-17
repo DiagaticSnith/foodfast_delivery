@@ -109,6 +109,13 @@ exports.createOrder = async (req, res) => {
     const { userId, total, address, items, sessionId } = req.body;
     // Luôn tạo đơn với status 'Chưa giao'
   const order = await Order.create({ userId, total, address, status: 'Pending', sessionId });
+    // Business metric: increment orders created via API
+    try {
+      const { ordersCreated } = require('../metrics');
+      if (ordersCreated && typeof ordersCreated.labels === 'function') ordersCreated.labels('api').inc();
+    } catch (e) {
+      console.warn('Could not increment ordersCreated metric', e && e.message);
+    }
     if (Array.isArray(items) && items.length > 0) {
       const { OrderDetail } = require('../models');
       for (const item of items) {

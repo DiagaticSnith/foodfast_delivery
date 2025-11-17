@@ -41,6 +41,12 @@ exports.createCheckoutSession = async (req, res) => {
     res.json({ sessionId: session.id, url: session.url });
   } catch (err) {
     console.error('Stripe error:', err);
+    try {
+      const { stripeErrors } = require('../metrics');
+      if (stripeErrors && typeof stripeErrors.labels === 'function') stripeErrors.labels('create_session').inc();
+    } catch (e) {
+      console.warn('Could not increment stripeErrors metric', e && e.message);
+    }
     res.status(500).json({ error: err.message });
   }
 };

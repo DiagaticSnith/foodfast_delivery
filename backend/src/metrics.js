@@ -38,6 +38,29 @@ register.registerMetric(httpRequestTotal);
 register.registerMetric(httpRequestBytesTotal);
 register.registerMetric(httpResponseBytesTotal);
 
+// Business metrics
+const ordersCreated = new client.Counter({
+  name: 'orders_created_total',
+  help: 'Total number of orders created',
+  labelNames: ['source']
+});
+
+const checkoutSuccess = new client.Counter({
+  name: 'checkout_success_total',
+  help: 'Total number of successful checkouts',
+  labelNames: ['source']
+});
+
+const stripeErrors = new client.Counter({
+  name: 'stripe_errors_total',
+  help: 'Total number of Stripe errors encountered',
+  labelNames: ['type']
+});
+
+register.registerMetric(ordersCreated);
+register.registerMetric(checkoutSuccess);
+register.registerMetric(stripeErrors);
+
 module.exports = {
   client,
   register,
@@ -45,4 +68,7 @@ module.exports = {
   httpRequestTotal
   ,httpRequestBytesTotal
   ,httpResponseBytesTotal
+  ,ordersCreated
+  ,checkoutSuccess
+  ,stripeErrors
 };
