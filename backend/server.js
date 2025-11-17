@@ -49,8 +49,19 @@ try {
 	// request + bytes metrics middleware
 	app.use((req, res, next) => {
 		const start = process.hrtime();
-		// request size (may be missing for chunked requests)
-		const reqSize = Number(req.headers['content-length'] || 0);
+		// request size: prefer parsed raw body (set in express.json verify or raw webhook handler),
+		// fallback to Content-Length header (may be missing for chunked requests)
+		let reqSize = 0;
+		try {
+			if (req.rawBody) {
+				if (Buffer.isBuffer(req.rawBody)) reqSize = req.rawBody.length;
+				else if (typeof req.rawBody === 'string') reqSize = Buffer.byteLength(req.rawBody);
+			} else {
+				reqSize = Number(req.headers['content-length'] || 0);
+			}
+		} catch (e) {
+			reqSize = Number(req.headers['content-length'] || 0) || 0;
+		}
 		let bytesWritten = 0;
 		const origWrite = res.write;
 		const origEnd = res.end;
