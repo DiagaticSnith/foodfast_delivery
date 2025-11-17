@@ -43,26 +43,52 @@ app.use(express.json({
 // ---- Prometheus metrics (minimal) ----
 let metricsAvailable = false;
 try {
-	const { register, httpRequestDurationSeconds, httpRequestTotal } = require('./src/metrics');
+	const { register, httpRequestDurationSeconds, httpRequestTotal, httpRequestBytesTotal, httpResponseBytesTotal } = require('./src/metrics');
 	metricsAvailable = true;
 
-	// request metrics middleware
+	// request + bytes metrics middleware
 	app.use((req, res, next) => {
 		const start = process.hrtime();
+		// request size (may be missing for chunked requests)
+		const reqSize = Number(req.headers['content-length'] || 0);
+		let bytesWritten = 0;
+		const origWrite = res.write;
+		const origEnd = res.end;
+
+		// wrap write to count bytes
+		res.write = function (chunk, encoding, cb) {
+			try {
+				if (chunk) {
+					bytesWritten += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk), encoding);
+				}
+			} catch (e) {}
+			return origWrite.apply(this, arguments);
+		};
+
+		res.end = function (chunk, encoding, cb) {
+			try {
+				if (chunk) {
+					bytesWritten += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk), encoding);
+				}
+			} catch (e) {}
+			return origEnd.apply(this, arguments);
+		};
+
 		res.on('finish', () => {
 			try {
 				const diff = process.hrtime(start);
 				const durationSeconds = diff[0] + diff[1] / 1e9;
-				// prefer route pattern when available; fallback to path
 				const route = (req.baseUrl || '') + (req.route && req.route.path ? req.route.path : req.path);
 				httpRequestDurationSeconds.labels(req.method, route, String(res.statusCode)).observe(durationSeconds);
 				httpRequestTotal.labels(req.method, route, String(res.statusCode)).inc();
+				// increment byte counters (use measured bytesWritten for response, reqSize for request)
+				httpRequestBytesTotal.labels(req.method, route, String(res.statusCode)).inc(reqSize || 0);
+				httpResponseBytesTotal.labels(req.method, route, String(res.statusCode)).inc(bytesWritten || 0);
 			} catch (e) {
-				// metric recording must not break app
-				// eslint-disable-next-line no-console
 				console.warn('metrics error', e && e.message);
 			}
 		});
+
 		next();
 	});
 
