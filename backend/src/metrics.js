@@ -20,13 +20,29 @@ const httpRequestTotal = new client.Counter({
   labelNames: ['method', 'route', 'status']
 });
 
+const httpRequestBytesTotal = new client.Counter({
+  name: 'http_request_bytes_total',
+  help: 'Total bytes received in HTTP requests',
+  labelNames: ['method', 'route', 'status']
+});
+
+const httpResponseBytesTotal = new client.Counter({
+  name: 'http_response_bytes_total',
+  help: 'Total bytes sent in HTTP responses',
+  labelNames: ['method', 'route', 'status']
+});
+
 // Register custom metrics
 register.registerMetric(httpRequestDurationSeconds);
 register.registerMetric(httpRequestTotal);
+register.registerMetric(httpRequestBytesTotal);
+register.registerMetric(httpResponseBytesTotal);
 
 module.exports = {
   client,
   register,
   httpRequestDurationSeconds,
   httpRequestTotal
+  ,httpRequestBytesTotal
+  ,httpResponseBytesTotal
 };
