@@ -157,6 +157,8 @@ app.post('/api/rum', express.text({ type: '*/*' }), (req, res, next) => {
 	}
 	next();
 }, rumController.handleRum);
+// Debug endpoint to view recent RUM events received (lightweight)
+app.get('/debug/rum-recent', rumController.getRecent);
 // review routes (menus/:id/reviews, reviews/:id)
 app.use('/api', reviewRoutes);
 
