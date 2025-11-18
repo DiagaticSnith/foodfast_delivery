@@ -11,16 +11,19 @@ const { sequelize } = safeRequire('./models') || {};
 
 let intervalHandle = null;
 
-function createGauges(client) {
-  if (!client) return null;
+function createGauges(metricsModule) {
+  // metricsModule is the object exported from ./metrics (contains client and register)
+  if (!metricsModule || !metricsModule.client || !metricsModule.register) return null;
+  const client = metricsModule.client;
   const Gauge = client.Gauge;
+  const register = metricsModule.register;
   return {
-    threads_connected: new Gauge({ name: 'mysql_threads_connected', help: 'Threads connected', registers: [client.register] }),
-    threads_running: new Gauge({ name: 'mysql_threads_running', help: 'Threads running', registers: [client.register] }),
-    queries_total: new Gauge({ name: 'mysql_queries_total', help: 'Global queries total (counter snapshot)', registers: [client.register] }),
-    slow_queries_total: new Gauge({ name: 'mysql_slow_queries_total', help: 'Slow queries total', registers: [client.register] }),
-    innodb_buffer_pool_pages_free: new Gauge({ name: 'mysql_innodb_buffer_pool_pages_free', help: 'InnoDB buffer pool pages free', registers: [client.register] }),
-    innodb_buffer_pool_pages_total: new Gauge({ name: 'mysql_innodb_buffer_pool_pages_total', help: 'InnoDB buffer pool pages total', registers: [client.register] })
+    threads_connected: new Gauge({ name: 'mysql_threads_connected', help: 'Threads connected', registers: [register] }),
+    threads_running: new Gauge({ name: 'mysql_threads_running', help: 'Threads running', registers: [register] }),
+    queries_total: new Gauge({ name: 'mysql_queries_total', help: 'Global queries total (counter snapshot)', registers: [register] }),
+    slow_queries_total: new Gauge({ name: 'mysql_slow_queries_total', help: 'Slow queries total', registers: [register] }),
+    innodb_buffer_pool_pages_free: new Gauge({ name: 'mysql_innodb_buffer_pool_pages_free', help: 'InnoDB buffer pool pages free', registers: [register] }),
+    innodb_buffer_pool_pages_total: new Gauge({ name: 'mysql_innodb_buffer_pool_pages_total', help: 'InnoDB buffer pool pages total', registers: [register] })
   };
 }
 
@@ -46,19 +49,26 @@ async function collectOnce(gauges) {
 
 module.exports = {
   start: (opts = {}) => {
-    if (!metrics || !metrics.client) {
-      console.info('dbMetrics: prom-client not available; skipping DB metrics');
+    if (!metrics) {
+      console.info('dbMetrics: metrics module not available; skipping DB metrics');
+      return;
+    }
+    if (!metrics.client || !metrics.register) {
+      console.info('dbMetrics: prom-client or register not available; skipping DB metrics');
       return;
     }
     if (!sequelize) {
       console.info('dbMetrics: sequelize not available; skipping DB metrics');
       return;
     }
-    const client = metrics.client;
-    const gauges = createGauges(client);
+    const gauges = createGauges(metrics);
+    if (!gauges) {
+      console.info('dbMetrics: failed to create gauges; skipping');
+      return;
+    }
     const intervalMs = (opts.intervalMs) ? opts.intervalMs : 15000;
     // Do an initial collection
-    collectOnce(gauges).catch(() => {});
+    collectOnce(gauges).then(() => console.info('dbMetrics: initial collection complete')).catch(() => {});
     intervalHandle = setInterval(() => collectOnce(gauges), intervalMs);
     console.info('dbMetrics: started polling MySQL status every', intervalMs, 'ms');
   },
