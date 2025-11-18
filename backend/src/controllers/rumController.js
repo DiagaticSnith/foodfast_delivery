@@ -8,6 +8,10 @@ const safeRequire = (path) => {
 
 const metrics = safeRequire('../metrics');
 
+// Simple in-memory buffer of recent events for debugging (rotating)
+const RECENT_MAX = 200;
+const recentEvents = [];
+
 // Handler for frontend push RUM events
 // Accepts either a single event or an array of events. Each event should be an object like:
 // { type: 'page_load', route: '/checkout', duration_ms: 1234, origin: 'https://app.example' }
@@ -27,6 +31,11 @@ exports.handleRum = async (req, res) => {
   const events = Array.isArray(body) ? body : [body];
   try {
     for (const ev of events) {
+      // store a lightweight record for debugging
+      try {
+        recentEvents.push({ ts: Date.now(), type: ev && ev.type, route: ev && ev.route });
+        if (recentEvents.length > RECENT_MAX) recentEvents.shift();
+      } catch (e) {}
       if (!ev || typeof ev !== 'object' || !ev.type) continue;
       const type = ev.type;
 
@@ -65,4 +74,10 @@ exports.handleRum = async (req, res) => {
     console.warn('RUM ingest error', err && err.message);
     return res.status(202).json({ accepted: 0 });
   }
+};
+
+// Expose a small debug helper for recent events
+exports.getRecent = (req, res) => {
+  // Return a shallow copy
+  res.json({ count: recentEvents.length, recent: recentEvents.slice(-50).reverse() });
 };
