@@ -145,7 +145,18 @@ app.use('/api/webhook', webhookRoutes);
 app.use('/api/order-details', orderDetailRoutes);
 app.use('/api/checkout', checkoutSuccessRoutes);
 // Ingest frontend RUM (client -> backend -> Prometheus)
-app.post('/api/rum', express.json(), rumController.handleRum);
+// Accept both application/json and sendBeacon/text payloads. If body is text,
+// try to JSON.parse it before handing to the controller.
+app.post('/api/rum', express.text({ type: '*/*' }), (req, res, next) => {
+	if (typeof req.body === 'string') {
+		try {
+			req.body = JSON.parse(req.body);
+		} catch (e) {
+			// leave as string; controller will validate
+		}
+	}
+	next();
+}, rumController.handleRum);
 // review routes (menus/:id/reviews, reviews/:id)
 app.use('/api', reviewRoutes);
 
