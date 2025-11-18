@@ -38,6 +38,37 @@ register.registerMetric(httpRequestTotal);
 register.registerMetric(httpRequestBytesTotal);
 register.registerMetric(httpResponseBytesTotal);
 
+// Frontend RUM metrics (client -> backend -> Prometheus)
+const frontendPageLoadSeconds = new client.Histogram({
+  name: 'frontend_page_load_seconds',
+  help: 'Page load time observed from the browser (seconds)',
+  labelNames: ['route', 'origin'],
+  buckets: [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 5]
+});
+
+const frontendJsErrors = new client.Counter({
+  name: 'frontend_js_errors_total',
+  help: 'Total number of JavaScript errors observed in the frontend',
+  labelNames: ['route', 'severity']
+});
+
+const frontendResourceErrors = new client.Counter({
+  name: 'frontend_resource_errors_total',
+  help: 'Total number of resource loading errors observed in the frontend',
+  labelNames: ['route', 'resource_type']
+});
+
+const frontendRequests = new client.Counter({
+  name: 'frontend_requests_total',
+  help: 'Frontend-reported request counts (for synthetic/UX tracking)',
+  labelNames: ['route', 'method', 'status']
+});
+
+register.registerMetric(frontendPageLoadSeconds);
+register.registerMetric(frontendJsErrors);
+register.registerMetric(frontendResourceErrors);
+register.registerMetric(frontendRequests);
+
 // Business metrics
 const ordersCreated = new client.Counter({
   name: 'orders_created_total',
@@ -71,4 +102,8 @@ module.exports = {
   ,ordersCreated
   ,checkoutSuccess
   ,stripeErrors
+  ,frontendPageLoadSeconds
+  ,frontendJsErrors
+  ,frontendResourceErrors
+  ,frontendRequests
 };

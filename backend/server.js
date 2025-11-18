@@ -19,7 +19,9 @@ const webhookRoutes = require('./src/routes/webhookRoutes');
 const orderDetailRoutes = require('./src/routes/orderDetailRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
 const reviewRoutes = require('./src/routes/reviewRoutes');
+const rumController = require('./src/controllers/rumController');
 const { startDroneDispatcher } = require('./src/utils/droneDispatcher');
+const dbMetrics = require('./src/dbMetrics');
 
 const app = express();
 
@@ -142,6 +144,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/order-details', orderDetailRoutes);
 app.use('/api/checkout', checkoutSuccessRoutes);
+// Ingest frontend RUM (client -> backend -> Prometheus)
+app.post('/api/rum', express.json(), rumController.handleRum);
 // review routes (menus/:id/reviews, reviews/:id)
 app.use('/api', reviewRoutes);
 
@@ -169,4 +173,10 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
 	console.log(`Server running on port ${PORT}`);
 	startDroneDispatcher({ intervalMs: 4000, burst: 5 });
+	// Start app-level DB metrics collector (polling)
+	try {
+		dbMetrics.start({ intervalMs: process.env.DB_METRICS_INTERVAL_MS ? Number(process.env.DB_METRICS_INTERVAL_MS) : 15000 });
+	} catch (e) {
+		console.warn('Failed to start dbMetrics', e && e.message);
+	}
 });
