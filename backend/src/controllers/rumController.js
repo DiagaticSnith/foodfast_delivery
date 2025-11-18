@@ -18,6 +18,12 @@ exports.handleRum = async (req, res) => {
   const body = req.body;
   if (!body) return res.status(400).json({ message: 'empty body' });
 
+  // Debug: log short summary to help verify client sends events
+  try {
+    const summary = Array.isArray(body) ? body.map(e => e && e.type).slice(0,5) : [body.type];
+    console.info('RUM ingest received types:', summary);
+  } catch (e) {}
+
   const events = Array.isArray(body) ? body : [body];
   try {
     for (const ev of events) {
