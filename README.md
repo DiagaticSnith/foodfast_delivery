@@ -74,4 +74,6 @@ npm run dev
 - Pull request mô tả rõ thay đổi, migration, ảnh hưởng data.
 - Viết test nhỏ cho logic quan trọng (payments, dispatch).
 
-asf
+
+test..
+
