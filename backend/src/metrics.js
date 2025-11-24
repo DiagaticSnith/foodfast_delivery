@@ -32,11 +32,18 @@ const httpResponseBytesTotal = new client.Counter({
   labelNames: ['method', 'route', 'status']
 });
 
+const blockedByRateLimit = new client.Counter({
+  name: 'blocked_by_rate_limit_total',
+  help: 'Total number of requests blocked by the rate limiter',
+  labelNames: ['route']
+});
+
 // Register custom metrics
 register.registerMetric(httpRequestDurationSeconds);
 register.registerMetric(httpRequestTotal);
 register.registerMetric(httpRequestBytesTotal);
 register.registerMetric(httpResponseBytesTotal);
+register.registerMetric(blockedByRateLimit);
 
 // Frontend RUM metrics (client -> backend -> Prometheus)
 const frontendPageLoadSeconds = new client.Histogram({
@@ -69,6 +76,8 @@ register.registerMetric(frontendJsErrors);
 register.registerMetric(frontendResourceErrors);
 register.registerMetric(frontendRequests);
 
+register.registerMetric(blockedByRateLimit);
+
 // Business metrics
 const ordersCreated = new client.Counter({
   name: 'orders_created_total',
@@ -99,6 +108,7 @@ module.exports = {
   httpRequestTotal
   ,httpRequestBytesTotal
   ,httpResponseBytesTotal
+  ,blockedByRateLimit
   ,ordersCreated
   ,checkoutSuccess
   ,stripeErrors
