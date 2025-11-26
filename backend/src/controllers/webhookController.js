@@ -36,9 +36,35 @@ exports.handleWebhook = async (req, res) => {
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         try {
-            // Lấy userId và address từ metadata
-            const userId = session.metadata.userId;
-            const address = session.metadata.address;
+            // Lấy userId và address từ metadata (metadata may be undefined)
+            let userId = session.metadata && session.metadata.userId ? session.metadata.userId : null;
+            const address = session.metadata && session.metadata.address ? session.metadata.address : null;
+
+            // If metadata.userId is missing, try to resolve the user from the session's customer info
+            // (e.g. customer_email or customer_details.email). This helps when sessions are created
+            // without explicit metadata but the customer email matches an existing user.
+            if (!userId) {
+                const possibleEmail = session.customer_email || (session.customer_details && session.customer_details.email);
+                if (possibleEmail) {
+                    try {
+                        const possibleUser = await User.findOne({ where: { email: possibleEmail } });
+                        if (possibleUser) userId = possibleUser.id;
+                    } catch (e) {
+                        console.warn('Error looking up user by email in webhook:', e && e.message);
+                    }
+                }
+            }
+
+            // If we still don't have a userId, bail out — the Order model requires userId.
+            if (!userId) {
+                console.error('Webhook missing userId and unable to resolve user from session. Aborting order creation. session.id=', session.id, 'session.customer_email=', session.customer_email);
+                try {
+                    const { stripeErrors } = require('../metrics');
+                    if (stripeErrors && typeof stripeErrors.labels === 'function') stripeErrors.labels('webhook_missing_user').inc();
+                } catch (e) {}
+                // Return 400 so the event can be investigated (Stripe will retry). Avoid creating an invalid Order.
+                return res.status(400).json({ error: 'Missing userId in checkout session metadata and could not resolve user by email' });
+            }
             // Lấy line items
             const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
             // Tạo Order
