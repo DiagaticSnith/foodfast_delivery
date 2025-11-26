@@ -26,13 +26,15 @@ const dbMetrics = require('./src/dbMetrics');
 
 const app = express();
 
-// When running behind a proxy (Railway, Heroku, etc.) express should trust
-// the proxy so middleware that relies on `req.ip` or X-Forwarded-* headers
-// works correctly (rate-limiter, logging, etc.). Allow opt-out via env.
-if (process.env.TRUST_PROXY && process.env.TRUST_PROXY.toLowerCase() === 'false') {
-	// explicit opt-out
+if (process.env.TRUST_PROXY && String(process.env.TRUST_PROXY).toLowerCase() === 'false') {
+	// explicit opt-out: do not set trust proxy
+} else if (process.env.TRUST_PROXY) {
+	// use provided value (number or string)
+	const val = isNaN(Number(process.env.TRUST_PROXY)) ? process.env.TRUST_PROXY : Number(process.env.TRUST_PROXY);
+	app.set('trust proxy', val);
 } else {
-	app.set('trust proxy', true);
+	// sensible default: trust first proxy hop
+	app.set('trust proxy', 1);
 }
 // Middleware
 app.use(cors()); // Cho phép CORS
