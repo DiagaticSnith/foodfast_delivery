@@ -21,6 +21,11 @@ if (!resolvedBase && typeof window !== 'undefined') {
 export const api = axios.create({
   baseURL: resolvedBase || undefined,
 });
+try {
+  if (resolvedBase) {
+    axios.defaults.baseURL = resolvedBase;
+  }
+} catch (e) {}
 
 // Ensure axios knows the runtime base if available at module initialization.
 try {
