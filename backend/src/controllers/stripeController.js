@@ -3,7 +3,11 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 exports.createCheckoutSession = async (req, res) => {
   try {
-    const { cartItems, address, userId, email } = req.body;
+    const { cartItems, address, userId: bodyUserId, email } = req.body;
+    // Prefer authenticated user from middleware when available to avoid
+    // relying on client-supplied userId which can be tampered with.
+    const authUserId = (req.user && req.user.id) ? req.user.id : undefined;
+    const userId = authUserId || bodyUserId;
     // Chuyển cartItems sang line_items cho Stripe
     const line_items = cartItems.map(item => {
       const productData = { name: item.name };
@@ -27,8 +31,9 @@ exports.createCheckoutSession = async (req, res) => {
       success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/cancel`,
       metadata: {
-        address,
-        userId,
+        // Stripe requires metadata values to be strings. Only include when present.
+        ...(address ? { address } : {}),
+        ...(userId ? { userId: String(userId) } : {}),
       },
     };
     
